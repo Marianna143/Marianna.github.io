@@ -5,6 +5,7 @@ import SmoothScroll from "@/components/SmoothScroll";
 import CustomCursor from "@/components/CustomCursor";
 import EmeraldScene from "@/components/EmeraldScene";
 
+
 const plusJakartaSans = Plus_Jakarta_Sans({
     subsets: ["latin", "latin-ext"],
     variable: "--font-plus-jakarta"
@@ -35,6 +36,25 @@ export default function RootLayout({
                 <SmoothScroll>
                     {children}
                 </SmoothScroll>
+            </body>
+        </html>
+    );
+}
+
+
+import { Analytics } from '@vercel/analytics/react'; // Сначала горит серым
+
+export default function RootLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    // ... остальной код
+    return (
+        <html lang="ru">
+            <body>
+                {children}
+                <Analytics /> {/* Как только вы добавите это, импорт станет ярким! */}
             </body>
         </html>
     );
