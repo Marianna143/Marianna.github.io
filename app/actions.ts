@@ -9,39 +9,46 @@ export async function sendToTelegram(formData: FormData) {
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
+    // Проверка наличия токенов
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
         console.error("Telegram credentials not configured");
-        return { success: false, message: "Server configuration error" };
+        return { success: false, message: "Ошибка конфигурации сервера (нет токенов)" };
     }
 
-    const message = `
-🆕 *Новая заявка с портфолио!*
+    // Формируем сообщение (используем HTML для надежности, как в примере выше)
+    const text = `
+🆕 <b>Новая заявка с портфолио!</b>
 
-👤 *Имя:* ${name}
-📱 *Telegram:* ${telegram}
-📋 *Тип проекта:* ${type}
-💭 *Пожелания:* ${wishes || "Нет"}
-    `.trim();
+👤 <b>Имя:</b> ${name || "Не указано"}
+📱 <b>Telegram:</b> ${telegram || "Не указан"}
+📋 <b>Тип проекта:</b> ${type || "Не выбран"}
+💭 <b>Пожелания:</b> ${wishes || "Нет"}
+    `;
 
     try {
-        // Вместо прямой отправки в Телеграм, отправляем на наш API
-        const response = await fetch("/api/contact", {
+        // ОТПРАВЛЯЕМ СРАЗУ В ТЕЛЕГРАМ (минуя route.ts)
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+        const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                message: message, // Передаем текст сообщения нашему серверу
+                chat_id: TELEGRAM_CHAT_ID,
+                text: text,
+                parse_mode: "HTML",
             }),
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            console.error("Telegram API response error:", error);
-            throw new Error("Failed to send message to Telegram");
+            const errorText = await response.text();
+            console.error("Telegram Error:", errorText);
+            return { success: false, message: "Ошибка отправки в Telegram" };
         }
 
-        return { success: true, message: "Message sent!" };
+        return { success: true, message: "Заявка успешно отправлена!" };
+
     } catch (error) {
-        console.error("Error in sendToTelegram:", error);
-        return { success: false, message: "Error sending message" };
+        console.error("Server Action Error:", error);
+        return { success: false, message: "Сбой подключения" };
     }
 }
