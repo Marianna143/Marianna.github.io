@@ -4,8 +4,6 @@ import { motion } from "framer-motion";
 import EmeraldScene from "./EmeraldScene";
 
 export default function HeroSection() {
-    const titleText = "Создание сайтов";
-
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 text-center">
             <div className="max-w-5xl w-full relative z-10">
@@ -17,46 +15,14 @@ export default function HeroSection() {
                     <span className="inline-block px-5 py-2 rounded-full bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold mb-10 backdrop-blur-md tracking-[0.5em] uppercase">
                         Product Design & Dev
                     </span>
-                    {/* 
-                    <h1 className="text-6xl md:text-8xl lg:text-[9rem] leading-[1.1] mb-6 flex flex-wrap justify-center gap-x-4">
-                        {titleText.split(" ").map((word, i) => (
-                            <span key={i} className="inline-flex overflow-hidden pb-4">
-                                {word.split("").map((char, j) => (
-                                    <motion.span
-                                        key={j}
-                                        initial={{
-                                            opacity: 0,
-                                            clipPath: "inset(0 100% 0 0)",
-                                            x: -10
-                                        }}
-                                        animate={{
-                                            opacity: 1,
-                                            clipPath: "inset(0 0% 0 0)",
-                                            x: 0
-                                        }}
-                                        transition={{
-                                            duration: 1.2, // Much slower
-                                            delay: (i * word.length + j) * 0.2, // Increased delay per character
-                                            ease: "easeInOut"
-                                        }}
-                                        className="font-script inline-block bg-gradient-to-r from-emerald-100 to-emerald-500 bg-clip-text text-transparent lowercase px-1"
-                                    >
-                                        {char}
-                                    </motion.span>
-                                ))}
-                            </span>
-                        ))}
-                    </h1> */}
-                    <h1 className="text-6xl md:text-8xl lg:text-[9rem] leading-[1.6] mb-6 flex justify-center items-center overflow-visible">
-                        <span className="font-script bg-gradient-to-r from-emerald-100 to-emerald-500 bg-clip-text text-transparent block py-14 pl-6 pr-20">
-                            {titleText}
-                        </span>
-                    </h1>
+
+                    {/* ВСТАВЛЯЕМ НАШ СТЕКЛЯННЫЙ ТЕКСТ СЮДА */}
+                    <GlassText />
 
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 1.8, duration: 1 }}
+                        transition={{ delay: 3.5, duration: 1 }} // Задержка, чтобы появилось после "рисования"
                         className="text-emerald-500/80 font-medium text-sm md:text-base mb-16 tracking-[0.4em] uppercase"
                     >
                         Меня зовут <span className="text-white font-bold">Марианна</span>
