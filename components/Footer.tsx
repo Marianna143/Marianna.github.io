@@ -21,7 +21,7 @@ export default function Footer() {
                 </div>
 
                 <p className="text-emerald-500/20 text-xs tracking-widest uppercase">
-                    © 2026 Crafted by Marianna. Next.js + Three.js + Love.
+                    © 2026 Crafted by Marianna.
                 </p>
             </div>
         </footer>

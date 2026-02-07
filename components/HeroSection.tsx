@@ -1,5 +1,5 @@
 "use client";
-
+import GlassText from "@/components/GlassText";
 import { motion } from "framer-motion";
 import EmeraldScene from "./EmeraldScene";
 
@@ -69,7 +69,7 @@ export default function HeroSection() {
                     transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
                     className="text-lg md:text-xl text-emerald-100/70 max-w-2xl mx-auto mb-12 leading-relaxed"
                 >
-                    Выпускница Лицея НИУ ВШЭ, студентка МГТУ им. Баумана.
+                    Выпускница Лицея НИУ ВШЭ "Дизайн", студентка МГТУ им. Баумана.
                     Создаю эстетичные цифровые продукты более 4 лет.
                 </motion.p>
 
@@ -102,7 +102,7 @@ export default function HeroSection() {
                 transition={{ duration: 1, delay: 1 }}
                 className="absolute bottom-10 left-1/2 -translate-x-1/2 text-emerald-500/40 text-xs tracking-widest uppercase animate-bounce"
             >
-                Scroll to explore
+                Вниз
             </motion.div>
         </section>
     );

@@ -18,23 +18,23 @@ const greatVibes = Great_Vibes({
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://portfolio-2026-six-indol.vercel.app'), // Базовая ссылка для картинок
+    metadataBase: new URL('https://marianna-web.ru'),
     title: {
         default: "Марианна | Разработка сайтов: Tilda, Taplink, Интернет-магазины",
         template: "%s | Marianna Web Dev"
     },
     description: "Частный веб-разработчик. Создание сайтов любой сложности: от Таплинка до интернет-магазинов на коде. Дизайн, верстка, интеграции с Telegram.",
     keywords: ["разработка сайтов", "веб-дизайн", "Tilda эксперт", "создать сайт", "верстка html", "интернет-магазин под ключ", "Taplink дизайн", "портфолио"],
-    authors: [{ name: "Marianna", url: "https://portfolio-2026-six-indol.vercel.app" }],
+    authors: [{ name: "Marianna", url: "https://marianna-web.ru" }],
     creator: "Marianna",
     openGraph: {
         title: "Марианна | Сайты, которые продают",
         description: "Разработка интернет-магазинов, лендингов и Taplink. Современный дизайн и чистый код.",
-        url: "https://portfolio-2026-six-indol.vercel.app",
+        url: "https://marianna-web.ru",
         siteName: "Marianna Portfolio",
         images: [
             {
-                url: "/og-image.jpg", // Картинку og-image.jpg нужно положить в папку public
+                url: "/og-image.jpg",
                 width: 1200,
                 height: 630,
                 alt: "Портфолио веб-разработчика",

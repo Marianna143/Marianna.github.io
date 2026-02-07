@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://portfolio-2026-six-indol.vercel.app' // Ваша ссылка
+    const baseUrl = 'https://marianna-web.ru' // Твой новый домен
 
     return [
         {
