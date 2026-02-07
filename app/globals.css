@@ -101,3 +101,36 @@ h6 {
     letter-spacing: -0.04em;
     font-weight: 700;
 }
+
+/* ... твой существующий код ... */
+
+/* Добавляем в конец файла: */
+
+.font-handwriting {
+    font-family: var(--font-marck-script), cursive;
+}
+
+.animate-draw-text {
+    fill: transparent;
+    stroke: #ffffff;
+    /* Цвет обводки */
+    stroke-width: 1.5px;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    /* Рисуем 4 секунды, потом через 0.5с плавно заливаем белым (на 20%) */
+    animation: draw 4s forwards ease-in-out, fill 1s forwards 3.5s;
+}
+
+@keyframes draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes fill {
+    to {
+        fill: #ffffff;
+        fill-opacity: 0.2;
+        /* Прозрачность заливки в конце */
+    }
+}
