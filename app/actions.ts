@@ -24,18 +24,14 @@ export async function sendToTelegram(formData: FormData) {
     `.trim();
 
     try {
-        const response = await fetch(
-            `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    chat_id: TELEGRAM_CHAT_ID,
-                    text: message,
-                    parse_mode: "Markdown",
-                }),
-            }
-        );
+        // Вместо прямой отправки в Телеграм, отправляем на наш API
+        const response = await fetch("/api/contact", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                message: message, // Передаем текст сообщения нашему серверу
+            }),
+        });
 
         if (!response.ok) {
             const error = await response.json();
