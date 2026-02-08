@@ -17,6 +17,10 @@
     --font-script: var(--font-great-vibes);
 }
 
+.font-handwriting {
+    font-family: var(--font-marck-script), cursive;
+}
+
 :root {
     --background: #000000;
     --foreground: #ecfdf5;
