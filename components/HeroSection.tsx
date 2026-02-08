@@ -24,7 +24,7 @@ export default function HeroSection() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 1.5, duration: 0.8 }}
+                        transition={{ delay: 2.5, duration: 0.8 }}
                         className="text-emerald-500/80 font-medium text-sm md:text-base mb-16 tracking-[0.4em] uppercase"
                     >
                         Меня зовут <span className="text-white font-bold">Марианна</span>
