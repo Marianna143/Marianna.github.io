@@ -22,7 +22,7 @@ export default function HeroSection() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 3.5, duration: 1 }} // Задержка, чтобы появилось после "рисования"
+                        transition={{ delay: 0.5, duration: 1 }} // Задержка, чтобы появилось после "рисования"
                         className="text-emerald-500/80 font-medium text-sm md:text-base mb-16 tracking-[0.4em] uppercase"
                     >
                         Меня зовут <span className="text-white font-bold">Марианна</span>
