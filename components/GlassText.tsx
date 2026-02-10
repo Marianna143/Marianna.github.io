@@ -36,20 +36,18 @@ const container = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.32,
-      delayChildren: 0.3,
+      staggerChildren: 0.45,
+      delayChildren: 0.2,
     },
   },
 };
 
 const draw = {
-  hidden: { pathLength: 0, opacity: 0 },
+  hidden: { pathLength: 0 },
   visible: {
     pathLength: 1,
-    opacity: 1,
     transition: {
-      pathLength: { duration: 1.8, ease: "easeInOut" },
-      opacity: { duration: 0.2 },
+      pathLength: { duration: 2.6, ease: "easeInOut" },
     },
   },
 };
@@ -67,26 +65,42 @@ export default function GlassText() {
         }}
       >
         <defs>
-          <linearGradient id="neonStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id="neonFill" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#6EE7B7" />
             <stop offset="100%" stopColor="#10B981" />
           </linearGradient>
-        </defs>
-
-        <motion.g initial="hidden" animate="visible" variants={container}>
-          {PATHS.map((path, i) => (
-            <motion.path
-              key={i}
-              d={path}
-              variants={draw}
-              stroke="url(#neonStroke)"
-              strokeWidth={0.3}
+          <mask
+            id="reveal"
+            maskUnits="userSpaceOnUse"
+            maskContentUnits="userSpaceOnUse"
+          >
+            <rect x="0" y="0" width="67" height="14" fill="black" />
+            <motion.g
+              initial="hidden"
+              animate="visible"
+              variants={container}
+              stroke="white"
+              strokeWidth={2.0}
               strokeLinecap="round"
               strokeLinejoin="round"
               fill="none"
+            >
+              {PATHS.map((path, i) => (
+                <motion.path key={i} d={path} variants={draw} />
+              ))}
+            </motion.g>
+          </mask>
+        </defs>
+
+        <g mask="url(#reveal)">
+          {PATHS.map((path, i) => (
+            <path
+              key={i}
+              d={path}
+              fill="url(#neonFill)"
             />
           ))}
-        </motion.g>
+        </g>
       </motion.svg>
     </div>
   );
