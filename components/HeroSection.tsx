@@ -38,7 +38,7 @@ export default function HeroSection() {
                     transition={{ duration: 0.8, delay: 1.8, ease: "easeOut" }}
                     className="text-lg md:text-xl text-emerald-100/70 max-w-2xl mx-auto mb-12 leading-relaxed"
                 >
-                    Выпускница Лицея НИУ ВШЭ "Дизайн", студентка МГТУ им. Баумана.
+                    Выпускница Лицея НИУ ВШЭ &quot;Дизайн&quot;, студентка МГТУ им. Баумана.
                     Создаю эстетичные цифровые продукты более 4 лет.
                 </motion.p>
 
