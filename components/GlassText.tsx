@@ -45,7 +45,7 @@ export default function GlassText() {
           strokeLinejoin="round"
           initial={{ pathLength: 0, opacity: 0.3 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 4.3, ease: [0.37, 0, 0.2, 1] }}
+          transition={{ duration: 15, ease: [0.37, 0, 0.2, 1] }}
           style={{
             filter:
               "drop-shadow(0 0 5px rgba(52, 211, 153, 0.9)) drop-shadow(0 0 12px rgba(16, 185, 129, 0.8)) drop-shadow(0 0 26px rgba(16, 185, 129, 0.45))",
@@ -61,9 +61,10 @@ export default function GlassText() {
           strokeLinejoin="round"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.9 }}
-          transition={{ delay: 4, duration: 0.8, ease: "easeOut" }}
+          transition={{ delay: 15, duration: 0.8, ease: "easeOut" }}
         />
       </motion.svg>
     </div>
   );
 }
+

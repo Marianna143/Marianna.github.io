@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
     // Игнорировать ошибки оформления (Lint) при сборке
     ignoreDuringBuilds: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
