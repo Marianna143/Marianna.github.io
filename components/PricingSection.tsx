@@ -20,8 +20,8 @@ const pricingData = [
     {
         title: "Кодовый сайт (Next.js / React)",
         items: [
-            { name: "Landing Page (Премиальные анимации, 3D)", price: "от 60 000 ₽" },
-            { name: "Корпоративный сайт", price: "от 120 000 ₽" },
+            { name: "Landing Page", price: "от 20 000 ₽" },
+            { name: "Корпоративный сайт", price: "от 50 000 ₽" },
             { name: "Сложные веб-сервисы", price: "по запросу" },
         ],
         note: "Используются передовые технологии: Three.js, Framer Motion, GSAP."

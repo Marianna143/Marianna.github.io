@@ -67,10 +67,10 @@ export default function PortfolioGrid() {
                     className="mb-16"
                 >
                     <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4 italic">
-                        Избранные <span className="text-emerald-500">работы</span>
+                        Шаблоны <span className="text-emerald-500">сайтов</span>
                     </h2>
                     <p className="text-emerald-100/50 text-lg uppercase tracking-widest">
-                        Это основные, но скоро будут еще
+                        Эти сайты шаблоны настоящих сайтов, некоторые ссылки и кнопки не подключены.
                     </p>
                 </motion.div>
 
