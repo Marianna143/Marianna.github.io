@@ -70,7 +70,7 @@ export default function PortfolioGrid() {
                         Шаблоны <span className="text-emerald-500">сайтов</span>
                     </h2>
                     <p className="text-emerald-100/50 text-lg uppercase tracking-widest">
-                        Эти сайты шаблоны настоящих сайтов, некоторые ссылки и кнопки не подключены.
+                        Это шаблоны настоящих сайтов, некоторые ссылки и кнопки не подключены.
                     </p>
                 </motion.div>
 
