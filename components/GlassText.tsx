@@ -21,6 +21,11 @@ export default function GlassText() {
             <stop offset="52%" stopColor="#7BE6C0" />
             <stop offset="100%" stopColor="#5ED4A8" />
           </linearGradient>
+          <linearGradient id="softFill" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#B8FBE3" />
+            <stop offset="52%" stopColor="#93F0CC" />
+            <stop offset="100%" stopColor="#75E1BA" />
+          </linearGradient>
           <radialGradient id="softHalo" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="rgba(113, 230, 188, 0.18)" />
             <stop offset="42%" stopColor="rgba(113, 230, 188, 0.1)" />
@@ -49,11 +54,21 @@ export default function GlassText() {
           strokeLinejoin="round"
           initial={{ pathLength: 0, opacity: 0.2 }}
           animate={{ pathLength: 1, opacity: 0.95 }}
-          transition={{ duration: 1.6, ease: [0.35, 0, 0.2, 1] }}
+          transition={{ duration: 1.45, ease: [0.35, 0, 0.2, 1] }}
           style={{
             filter:
               "drop-shadow(0 0 2px rgba(126, 238, 200, 0.42)) drop-shadow(0 0 8px rgba(66, 196, 153, 0.3))",
           }}
+        />
+
+        <motion.path
+          d={LOGO_PATH}
+          fill="url(#softFill)"
+          stroke="none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.52, 0.46] }}
+          transition={{ delay: 1.38, duration: 0.58, ease: "easeOut" }}
+          style={{ filter: "drop-shadow(0 0 5px rgba(150, 252, 218, 0.2))" }}
         />
 
         <motion.path

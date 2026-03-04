@@ -29,6 +29,12 @@
 
 body {
     background-color: var(--background);
+    background-image:
+        radial-gradient(circle at center, rgba(217, 255, 239, 0.2) 0 1px, transparent 1.45px),
+        radial-gradient(circle at center, rgba(157, 255, 219, 0.14) 0 1px, transparent 1.45px),
+        radial-gradient(circle at center, rgba(110, 231, 183, 0.1) 0 0.9px, transparent 1.35px);
+    background-size: 180px 180px, 260px 260px, 340px 340px;
+    background-position: 0 0, 80px 130px, 130px 55px;
     color: var(--foreground);
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
@@ -99,7 +105,7 @@ body {
 
 .shooting-stars {
     position: absolute;
-    inset: -12vh -14vw;
+    inset: -16vh -18vw;
     pointer-events: none;
     overflow: hidden;
 }
@@ -108,7 +114,7 @@ body {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.42;
+    opacity: 0.58;
     background-image:
         radial-gradient(circle at center, rgba(229, 255, 245, 0.55) 0 1px, transparent 1.4px),
         radial-gradient(circle at center, rgba(180, 255, 226, 0.42) 0 1px, transparent 1.5px),
@@ -158,23 +164,23 @@ body {
 
 @keyframes shootingStar {
     0%,
-    96.4%,
+    82%,
     100% {
         opacity: 0;
         transform: translate3d(0, 0, 0) rotate(var(--meteor-angle, -24deg)) scaleX(0.24);
     }
 
-    96.8% {
-        opacity: 0.48;
+    84% {
+        opacity: 0.56;
     }
 
-    98% {
-        opacity: 0.28;
+    90% {
+        opacity: 0.34;
         transform: translate3d(var(--meteor-mid-x, -18vw), var(--meteor-mid-y, 9vh), 0)
             rotate(var(--meteor-angle, -24deg)) scaleX(0.98);
     }
 
-    99.2% {
+    94% {
         opacity: 0;
         transform: translate3d(var(--meteor-end-x, -24vw), var(--meteor-end-y, 14vh), 0)
             rotate(var(--meteor-angle, -24deg)) scaleX(0.62);

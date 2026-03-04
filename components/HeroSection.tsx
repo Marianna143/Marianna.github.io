@@ -26,16 +26,16 @@ const proofBadges = [
 export default function HeroSection() {
     const orbOffsetX = useMotionValue(0);
     const orbOffsetY = useMotionValue(0);
-    const orbX = useSpring(orbOffsetX, { stiffness: 92, damping: 17, mass: 0.3 });
-    const orbY = useSpring(orbOffsetY, { stiffness: 86, damping: 16, mass: 0.32 });
+    const orbX = useSpring(orbOffsetX, { stiffness: 42, damping: 22, mass: 0.62 });
+    const orbY = useSpring(orbOffsetY, { stiffness: 42, damping: 22, mass: 0.62 });
 
     useEffect(() => {
         const handleMove = (event: MouseEvent) => {
             const normalizedX = event.clientX / window.innerWidth - 0.5;
             const normalizedY = event.clientY / window.innerHeight - 0.5;
 
-            orbOffsetX.set(normalizedX * 210);
-            orbOffsetY.set(normalizedY * 170);
+            orbOffsetX.set(normalizedX * 118);
+            orbOffsetY.set(normalizedY * 92);
         };
 
         window.addEventListener("mousemove", handleMove, { passive: true });
@@ -50,23 +50,22 @@ export default function HeroSection() {
                     x: orbX,
                     y: orbY,
                     background:
-                        "radial-gradient(circle at 42% 38%, rgba(126, 253, 206, 0.44) 0%, rgba(16, 185, 129, 0.36) 42%, rgba(5, 150, 105, 0.24) 72%, rgba(4, 120, 87, 0.16) 100%)",
-                    boxShadow: "0 0 92px rgba(16,185,129,0.32)",
+                        "radial-gradient(circle at 46% 44%, rgba(120, 248, 198, 0.34) 0%, rgba(16, 185, 129, 0.3) 44%, rgba(5, 150, 105, 0.2) 74%, rgba(4, 120, 87, 0.14) 100%)",
+                    boxShadow: "0 0 70px rgba(16,185,129,0.24)",
                     filter: "blur(0.5px)",
                 }}
                 animate={{
-                    scale: [1, 1.05, 0.96, 1.03, 0.98, 1],
-                    rotate: [0, 2.4, -1.8, 1.2, -0.8, 0],
+                    scale: [1, 1.012, 1, 0.992, 1],
+                    rotate: [0, 0.55, -0.42, 0.24, 0],
                     borderRadius: [
-                        "54% 46% 58% 42% / 40% 63% 37% 60%",
-                        "43% 57% 38% 62% / 62% 42% 58% 38%",
-                        "59% 41% 52% 48% / 36% 66% 34% 64%",
-                        "47% 53% 63% 37% / 58% 39% 61% 42%",
-                        "61% 39% 44% 56% / 42% 61% 39% 58%",
-                        "54% 46% 58% 42% / 40% 63% 37% 60%",
+                        "52% 48% 55% 45% / 47% 54% 46% 53%",
+                        "49% 51% 53% 47% / 53% 48% 52% 47%",
+                        "55% 45% 50% 50% / 45% 56% 44% 55%",
+                        "51% 49% 57% 43% / 50% 51% 49% 50%",
+                        "52% 48% 55% 45% / 47% 54% 46% 53%",
                     ],
                 }}
-                transition={{ duration: 9.5, repeat: Infinity, ease: [0.42, 0, 0.18, 1] }}
+                transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
             />
 
             <div className="max-w-6xl w-full relative z-10">
