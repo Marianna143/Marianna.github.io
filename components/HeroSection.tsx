@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import GlassText from "@/components/GlassText";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import { Clock3, ShieldCheck, TrendingUp } from "lucide-react";
 
 const proofBadges = [
@@ -23,17 +24,37 @@ const proofBadges = [
 ];
 
 export default function HeroSection() {
+    const orbOffsetX = useMotionValue(0);
+    const orbOffsetY = useMotionValue(0);
+    const orbX = useSpring(orbOffsetX, { stiffness: 48, damping: 20, mass: 0.45 });
+    const orbY = useSpring(orbOffsetY, { stiffness: 48, damping: 20, mass: 0.45 });
+
+    useEffect(() => {
+        const handleMove = (event: MouseEvent) => {
+            const normalizedX = event.clientX / window.innerWidth - 0.5;
+            const normalizedY = event.clientY / window.innerHeight - 0.5;
+
+            orbOffsetX.set(normalizedX * 120);
+            orbOffsetY.set(normalizedY * 95);
+        };
+
+        window.addEventListener("mousemove", handleMove, { passive: true });
+        return () => window.removeEventListener("mousemove", handleMove);
+    }, [orbOffsetX, orbOffsetY]);
+
     return (
         <section className="relative min-h-screen flex items-start justify-center overflow-hidden px-6 pt-4 md:pt-8 text-center">
             <motion.div
-                className="absolute left-1/2 top-[46%] md:top-[44%] -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] md:w-[36rem] md:h-[36rem] rounded-full"
+                className="absolute left-1/2 top-[47%] md:top-[45%] -translate-x-1/2 -translate-y-1/2 w-[31rem] h-[31rem] md:w-[38rem] md:h-[38rem] rounded-full pointer-events-none"
                 style={{
+                    x: orbX,
+                    y: orbY,
                     background:
                         "radial-gradient(circle at 48% 45%, rgba(88, 245, 184, 0.34) 0%, rgba(16, 185, 129, 0.3) 46%, rgba(5, 150, 105, 0.2) 78%, rgba(4, 120, 87, 0.14) 100%)",
-                    boxShadow: "0 0 70px rgba(16,185,129,0.2)",
+                    boxShadow: "0 0 65px rgba(16,185,129,0.2)",
                 }}
-                animate={{ scale: [1, 1.03, 1] }}
-                transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ scale: [1, 1.018, 1] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             />
 
             <div className="max-w-6xl w-full relative z-10">

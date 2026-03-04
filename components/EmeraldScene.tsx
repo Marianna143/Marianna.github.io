@@ -23,36 +23,36 @@ function DeepStarLayers() {
         <>
             <group ref={farRef}>
                 <Stars
-                    radius={240}
-                    depth={140}
-                    count={1500}
-                    factor={1.55}
+                    radius={260}
+                    depth={155}
+                    count={1150}
+                    factor={1.25}
                     saturation={0}
                     fade
-                    speed={0.07}
+                    speed={0.05}
                 />
             </group>
 
             <group ref={midRef}>
                 <Stars
-                    radius={140}
-                    depth={90}
-                    count={1000}
-                    factor={1.85}
+                    radius={150}
+                    depth={95}
+                    count={820}
+                    factor={1.45}
                     saturation={0}
                     fade
-                    speed={0.11}
+                    speed={0.08}
                 />
             </group>
 
             <Stars
-                radius={72}
-                depth={32}
-                count={360}
-                factor={2.3}
+                radius={78}
+                depth={36}
+                count={260}
+                factor={1.9}
                 saturation={0}
                 fade
-                speed={0.16}
+                speed={0.12}
             />
         </>
     );
@@ -60,15 +60,21 @@ function DeepStarLayers() {
 
 export default function EmeraldScene() {
     return (
-        <div className="fixed inset-0 z-[-1] pointer-events-none bg-black relative overflow-hidden" style={{ opacity: 0.6 }}>
+        <div
+            className="fixed inset-0 z-[-1] pointer-events-none bg-black relative overflow-hidden"
+            style={{ opacity: 0.62 }}
+        >
             <Canvas
-                camera={{ position: [0, 0, 5], fov: 75 }}
+                camera={{ position: [0, 0, 6], fov: 68 }}
                 dpr={[1, 1.25]}
                 gl={{ antialias: false, alpha: true }}
-                eventSource={document.body}
+                eventSource={typeof document !== "undefined" ? document.body : undefined}
                 eventPrefix="client"
             >
                 <color attach="background" args={["#000000"]} />
+                <ambientLight intensity={0.46} />
+                <pointLight position={[4.5, 3.5, 5.5]} intensity={0.74} color="#6ee7b7" />
+                <pointLight position={[-4.5, -3.5, -3]} intensity={0.42} color="#047857" />
                 <DeepStarLayers />
             </Canvas>
 
