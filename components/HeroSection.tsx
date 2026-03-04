@@ -26,19 +26,14 @@ export default function HeroSection() {
     return (
         <section className="relative min-h-screen flex items-start justify-center overflow-hidden px-6 pt-4 md:pt-8 text-center">
             <motion.div
-                className="absolute -top-32 -left-20 w-72 h-72 rounded-full bg-emerald-500/15 blur-[100px]"
-                animate={{ x: [0, 40, -20, 0], y: [0, 35, 15, 0], scale: [1, 1.15, 0.95, 1] }}
-                transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-                className="absolute top-1/4 -right-24 w-80 h-80 rounded-full bg-emerald-400/10 blur-[120px]"
-                animate={{ x: [0, -50, 20, 0], y: [0, -30, 20, 0], scale: [1, 0.9, 1.1, 1] }}
-                transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[34rem] h-[10rem] rounded-full bg-emerald-500/10 blur-[90px]"
-                animate={{ opacity: [0.35, 0.75, 0.35] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute left-1/2 top-[49%] -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] md:w-[36rem] md:h-[36rem] rounded-full"
+                style={{
+                    background:
+                        "radial-gradient(circle at 48% 45%, rgba(88, 245, 184, 0.34) 0%, rgba(16, 185, 129, 0.3) 46%, rgba(5, 150, 105, 0.2) 78%, rgba(4, 120, 87, 0.14) 100%)",
+                    boxShadow: "0 0 70px rgba(16,185,129,0.2)",
+                }}
+                animate={{ scale: [1, 1.03, 1] }}
+                transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
             />
 
             <div className="max-w-6xl w-full relative z-10">
