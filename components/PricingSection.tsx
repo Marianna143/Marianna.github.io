@@ -73,8 +73,10 @@ export default function PricingSection() {
                                 className="w-full flex items-center justify-between p-8 text-left transition-colors hover:bg-emerald-500/5 relative z-10"
                             >
                                 <div>
-                                    <h3 className="text-2xl font-bold text-emerald-50 mb-2">{category.title}</h3>
-                                    <p className="text-emerald-100/55 text-sm">{category.subtitle}</p>
+                                    <h3 className="text-[1.72rem] font-sans font-semibold tracking-tight text-emerald-50 mb-2">
+                                        {category.title}
+                                    </h3>
+                                    <p className="text-emerald-100/55 text-[0.95rem] font-sans">{category.subtitle}</p>
                                 </div>
                                 <ChevronDown
                                     className={`w-6 h-6 text-emerald-500 transition-transform duration-300 ${openIndex === idx ? "rotate-180" : ""}`}
