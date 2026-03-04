@@ -45,7 +45,7 @@ export default function HeroSection() {
     return (
         <section className="relative min-h-screen flex items-start justify-center overflow-hidden px-6 pt-4 md:pt-8 text-center">
             <motion.div
-                className="absolute left-1/2 top-[47%] md:top-[45%] -translate-x-1/2 -translate-y-1/2 w-[31rem] h-[31rem] md:w-[38rem] md:h-[38rem] rounded-full pointer-events-none"
+                className="absolute left-1/2 top-[47%] md:top-[45%] -translate-x-1/2 -translate-y-1/2 w-[31rem] h-[31rem] md:w-[38rem] md:h-[38rem] pointer-events-none will-change-transform"
                 style={{
                     x: orbX,
                     y: orbY,
@@ -53,8 +53,17 @@ export default function HeroSection() {
                         "radial-gradient(circle at 48% 45%, rgba(88, 245, 184, 0.34) 0%, rgba(16, 185, 129, 0.3) 46%, rgba(5, 150, 105, 0.2) 78%, rgba(4, 120, 87, 0.14) 100%)",
                     boxShadow: "0 0 65px rgba(16,185,129,0.2)",
                 }}
-                animate={{ scale: [1, 1.018, 1] }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                animate={{
+                    scale: [1, 1.018, 0.994, 1],
+                    rotate: [0, 1.1, -0.9, 0],
+                    borderRadius: [
+                        "53% 47% 56% 44% / 46% 58% 42% 54%",
+                        "48% 52% 45% 55% / 58% 44% 56% 42%",
+                        "56% 44% 51% 49% / 43% 60% 40% 57%",
+                        "53% 47% 56% 44% / 46% 58% 42% 54%",
+                    ],
+                }}
+                transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
             />
 
             <div className="max-w-6xl w-full relative z-10">
