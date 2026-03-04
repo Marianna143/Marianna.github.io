@@ -30,17 +30,17 @@ function EmeraldAura() {
     });
 
     return (
-        <Float speed={1.5} rotationIntensity={0.5} floatIntensity={1}>
-            <Sphere args={[1, 64, 64]} scale={2.5} ref={mesh}>
+        <Float speed={1.1} rotationIntensity={0.35} floatIntensity={0.65}>
+            <Sphere args={[1, 44, 44]} scale={2.35} ref={mesh}>
                 <MeshDistortMaterial
                     color="#10b981"
                     attach="material"
-                    distort={0.4}
-                    speed={2}
-                    roughness={0.1}
-                    metalness={0.9}
+                    distort={0.28}
+                    speed={1.2}
+                    roughness={0.15}
+                    metalness={0.78}
                     emissive="#059669"
-                    emissiveIntensity={0.4}
+                    emissiveIntensity={0.28}
                 />
             </Sphere>
         </Float>
@@ -52,8 +52,8 @@ export default function EmeraldScene() {
         <div className="fixed inset-0 z-[-1] opacity-60 pointer-events-none bg-black">
             <Canvas
                 camera={{ position: [0, 0, 5], fov: 75 }}
-                dpr={[1, 2]}
-                gl={{ antialias: true, alpha: true }}
+                dpr={[1, 1.25]}
+                gl={{ antialias: false, alpha: true }}
                 eventSource={document.body}
                 eventPrefix="client"
             >
@@ -61,11 +61,11 @@ export default function EmeraldScene() {
                 <Stars
                     radius={100}
                     depth={50}
-                    count={7000}
-                    factor={4}
+                    count={3200}
+                    factor={3}
                     saturation={0}
                     fade
-                    speed={1.5}
+                    speed={0.75}
                 />
 
                 <ambientLight intensity={0.5} />
