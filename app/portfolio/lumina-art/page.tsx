@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowLeft, Maximize2, PlayCircle, Share2, Info } from "lucide-react";
+import { ArrowLeft, Maximize2 } from "lucide-react";
 import { useRef } from "react";
 
 const artImages = {
@@ -28,7 +28,7 @@ export default function LuminaArtPage() {
                     <span className="font-mono text-xs uppercase tracking-widest">Портфолио</span>
                 </Link>
                 <div className="font-bold tracking-[0.2em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-[#7000FF] to-[#00FFFF]">
-                    Галерея Lumina
+                    Галерея Люмина
                 </div>
                 <div className="w-20"></div>
             </nav>
@@ -38,7 +38,7 @@ export default function LuminaArtPage() {
                 <div className="absolute inset-0 z-0">
                     <Image
                         src={artImages.hero}
-                        alt="Digital Art Installation"
+                        alt="Цифровая художественная инсталляция"
                         fill
                         className="object-cover opacity-60"
                         priority
@@ -54,7 +54,7 @@ export default function LuminaArtPage() {
                         transition={{ duration: 1.5 }}
                     >
                         <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E0E0E0] to-[#7000FF]">
-                            LUMINA
+                            ЛЮМИНА
                         </h1>
                         <p className="text-xl md:text-3xl font-light tracking-[0.5em] uppercase opacity-80 pl-2">
                             Искусство Света
@@ -85,7 +85,7 @@ export default function LuminaArtPage() {
                             Где пиксели обретают <span className="italic text-[#00FFFF]">душу</span>.
                         </h2>
                         <p className="text-lg opacity-60 leading-relaxed font-light">
-                            Lumina — это пространство без границ. Мы стираем черту между физическим и цифровым,
+                            Люмина — это пространство без границ. Мы стираем черту между физическим и цифровым,
                             создавая полотна, которые живут, дышат и реагируют на ваше присутствие.
                         </p>
                         <div className="grid grid-cols-2 gap-8 pt-8 font-mono text-sm opacity-80">
@@ -102,7 +102,7 @@ export default function LuminaArtPage() {
                     <div className="w-full md:w-1/2 relative aspect-square rounded-full overflow-hidden border border-white/10">
                         <Image
                             src={artImages.gallery}
-                            alt="Gallery Interior"
+                            alt="Интерьер галереи"
                             fill
                             className="object-cover hover:scale-110 transition-transform duration-1000"
                         />
@@ -117,13 +117,13 @@ export default function LuminaArtPage() {
                         <div className="w-[80vw] md:w-[60vw] flex-shrink-0 flex flex-col justify-center">
                             <h2 className="text-8xl font-black mb-8 opacity-20">КОЛЛЕКЦИЯ</h2>
                             <p className="text-2xl font-light max-w-xl">
-                                Исследуйте нашу текущую экспозицию "Грани Реальности".
+                                Исследуйте нашу текущую экспозицию «Грани Реальности».
                             </p>
                         </div>
                         {[
-                            { img: artImages.item1, title: "Нейронный Шторм", artist: "AI Collective" },
-                            { img: artImages.item2, title: "Геометрия Снов", artist: "M. Kolar" },
-                            { img: artImages.item3, title: "Жидкий Неон", artist: "S. Vane" }
+                            { img: artImages.item1, title: "Нейронный Шторм", artist: "Коллектив ИИ" },
+                            { img: artImages.item2, title: "Геометрия Снов", artist: "Марк Колар" },
+                            { img: artImages.item3, title: "Жидкий Неон", artist: "Софи Вейн" }
                         ].map((item, i) => (
                             <div key={i} className="w-[80vw] md:w-[40vw] flex-shrink-0 group relative">
                                 <div className="aspect-[4/5] relative overflow-hidden mb-8 bg-[#111]">

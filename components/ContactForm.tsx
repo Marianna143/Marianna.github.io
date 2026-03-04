@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendToTelegram } from "@/app/actions";
-import { Send, CheckCircle, AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Handshake, Send, ShieldCheck, Timer } from "lucide-react";
+
+const benefits = [
+    { icon: Timer, title: "Ответ в день обращения" },
+    { icon: ShieldCheck, title: "Прозрачные этапы и сроки" },
+    { icon: Handshake, title: "Сопровождение после запуска" },
+];
 
 export default function ContactForm() {
     const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
@@ -21,20 +27,47 @@ export default function ContactForm() {
     }
 
     return (
-        <section id="contact" className="py-32 px-6 relative">
-            <div className="max-w-4xl mx-auto">
+        <section id="contact" className="py-32 px-6 relative overflow-hidden">
+            <motion.div
+                className="absolute -right-20 top-20 w-72 h-72 rounded-full bg-emerald-500/10 blur-[120px]"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.65, 0.25] }}
+                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            <div className="max-w-4xl mx-auto relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="text-center mb-16"
+                    className="text-center mb-10"
                 >
                     <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-6 italic">
                         Обсудим <span className="text-emerald-500">ваш проект?</span>
                     </h2>
-                    <p className="text-emerald-100/50">
-                        Оставьте заявку, и я свяжусь с вами в Telegram в ближайшее время.
+                    <p className="text-emerald-100/60">
+                        Оставьте заявку, и я напишу вам в Телеграм, чтобы обсудить задачу и предложить лучшее решение.
                     </p>
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8"
+                >
+                    {benefits.map((benefit, index) => (
+                        <motion.div
+                            key={benefit.title}
+                            initial={{ opacity: 0, y: 12 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.1, duration: 0.35 }}
+                            className="glass rounded-2xl p-4 flex items-center gap-3"
+                        >
+                            <benefit.icon className="w-5 h-5 text-emerald-400" />
+                            <span className="text-emerald-100/80 text-sm">{benefit.title}</span>
+                        </motion.div>
+                    ))}
                 </motion.div>
 
                 <motion.form
@@ -44,6 +77,8 @@ export default function ContactForm() {
                     viewport={{ once: true }}
                     className="glass p-10 rounded-[2rem] space-y-6 relative overflow-hidden"
                 >
+                    <div className="absolute -top-12 -left-10 w-44 h-44 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-emerald-500/70 ml-2">Как вас зовут?</label>
@@ -55,7 +90,7 @@ export default function ContactForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-emerald-500/70 ml-2">Ваш Telegram ник</label>
+                            <label className="text-sm font-medium text-emerald-500/70 ml-2">Ваш ник в Телеграм</label>
                             <input
                                 required
                                 name="telegram"
@@ -71,9 +106,9 @@ export default function ContactForm() {
                             name="type"
                             className="w-full bg-emerald-500/5 border border-emerald-500/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500/50 transition-colors text-emerald-50 appearance-none"
                         >
-                            <option value="tilda">Сайт на Tilda</option>
-                            <option value="code">Кодовый сайт (Next.js)</option>
-                            <option value="taplink">Taplink / Визитка</option>
+                            <option value="tilda">Сайт на Тильде</option>
+                            <option value="code">Кодовый сайт</option>
+                            <option value="taplink">Таплинк / Визитка</option>
                             <option value="other">Другое</option>
                         </select>
                     </div>
@@ -83,7 +118,7 @@ export default function ContactForm() {
                         <textarea
                             name="wishes"
                             rows={4}
-                            placeholder="Расскажите о вашей идее..."
+                            placeholder="Расскажите о вашей задаче и целях..."
                             className="w-full bg-emerald-500/5 border border-emerald-500/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500/50 transition-colors text-emerald-50 resize-none"
                         />
                     </div>
@@ -114,7 +149,6 @@ export default function ContactForm() {
                         )}
                     </button>
 
-                    {/* Status Overlay */}
                     <AnimatePresence>
                         {status === "success" && (
                             <motion.div
@@ -125,7 +159,7 @@ export default function ContactForm() {
                             >
                                 <CheckCircle className="w-16 h-16 text-emerald-500 mb-4" />
                                 <h3 className="text-2xl font-bold text-emerald-50">Заявка принята!</h3>
-                                <p className="text-emerald-100/60 mt-2">Я напишу вам в Telegram в ближайшее время.</p>
+                                <p className="text-emerald-100/60 mt-2">Я напишу вам в Телеграм в ближайшее время.</p>
                             </motion.div>
                         )}
                     </AnimatePresence>

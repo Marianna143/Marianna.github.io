@@ -65,7 +65,7 @@ export default function ContactPage() {
                                 <input type="text" className="w-full bg-[#EFEBE4]/30 border border-[#D4A373]/20 rounded-xl px-4 py-3 focus:outline-none focus:border-[#D4A373] transition-colors" />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold mb-2 opacity-70">Email</label>
+                                <label className="block text-sm font-bold mb-2 opacity-70">Электронная почта</label>
                                 <input type="email" className="w-full bg-[#EFEBE4]/30 border border-[#D4A373]/20 rounded-xl px-4 py-3 focus:outline-none focus:border-[#D4A373] transition-colors" />
                             </div>
                             <div>

@@ -1,27 +1,32 @@
 import HeroSection from "@/components/HeroSection";
 import PortfolioGrid from "@/components/PortfolioGrid";
+import SalesProofSection from "@/components/SalesProofSection";
 import PricingSection from "@/components/PricingSection";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 
-
 export default function Home() {
     return (
         <main className="min-h-screen">
-            {/* Скрытый блок для Google (SEO) */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
                     __html: JSON.stringify({
                         "@context": "https://schema.org",
                         "@type": "Person",
-                        "name": "Marianna",
+                        "name": "Марианна",
                         "url": "https://marianna-web.ru",
-                        "jobTitle": "Web Developer & UI/UX Designer",
-                        "knowsAbout": ["Web Development", "Tilda Publishing", "Taplink", "Next.js", "E-commerce"],
+                        "jobTitle": "Веб-разработчик и дизайнер интерфейсов",
+                        "knowsAbout": [
+                            "Разработка сайтов",
+                            "Создание интернет-магазинов",
+                            "Дизайн интерфейсов",
+                            "Адаптивная верстка",
+                            "Интеграции с Телеграм"
+                        ],
                         "image": "https://marianna-web.ru/og-image.jpg",
                         "sameAs": [
-                            "https://t.me/workvinil", // Твой рабочий контакт
+                            "https://t.me/workvinil"
                         ]
                     })
                 }}
@@ -29,6 +34,7 @@ export default function Home() {
 
             <HeroSection />
             <PortfolioGrid />
+            <SalesProofSection />
             <PricingSection />
             <ContactForm />
             <Footer />

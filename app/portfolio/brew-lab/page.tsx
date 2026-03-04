@@ -21,7 +21,7 @@ export default function BrewLabPage() {
                     <ArrowLeft className="w-5 h-5" />
                     <span className="font-mono text-sm uppercase">Проекты</span>
                 </Link>
-                <div className="font-bold tracking-wider uppercase text-[#D35400]">ЛАБОРАТОРИЯ BREW</div>
+                <div className="font-bold tracking-wider uppercase text-[#D35400]">ЛАБОРАТОРИЯ ВАРКИ</div>
                 <div className="w-20"></div>
             </nav>
 
@@ -30,7 +30,7 @@ export default function BrewLabPage() {
                 <div className="absolute inset-0 z-0">
                     <Image
                         src={coffeeImages.hero}
-                        alt="Industrial Coffee Shop"
+                        alt="Индустриальная кофейня"
                         fill
                         className="object-cover brightness-50"
                         priority
@@ -102,15 +102,15 @@ export default function BrewLabPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-4 pt-12">
                             <div className="relative aspect-[3/4] rounded-lg overflow-hidden grayscale hover:grayscale-0 transition-all duration-500">
-                                <Image src={coffeeImages.pouring} alt="Pouring Coffee" fill className="object-cover" />
+                                <Image src={coffeeImages.pouring} alt="Приготовление кофе" fill className="object-cover" />
                             </div>
                             <div className="relative aspect-[4/3] rounded-lg overflow-hidden grayscale hover:grayscale-0 transition-all duration-500">
-                                <Image src={coffeeImages.beans} alt="Coffee Beans" fill className="object-cover" />
+                                <Image src={coffeeImages.beans} alt="Кофейные зерна" fill className="object-cover" />
                             </div>
                         </div>
                         <div className="space-y-4">
                             <div className="relative aspect-[4/3] rounded-lg overflow-hidden grayscale hover:grayscale-0 transition-all duration-500">
-                                <Image src={coffeeImages.roaster} alt="Barista" fill className="object-cover" />
+                                <Image src={coffeeImages.roaster} alt="Бариста" fill className="object-cover" />
                             </div>
                             <div className="bg-[#1C1C1C] p-6 rounded-lg border border-[#333] flex flex-col justify-center items-center text-center">
                                 <Coffee className="w-10 h-10 text-[#D35400] mb-4" />

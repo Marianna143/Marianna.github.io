@@ -68,7 +68,7 @@ export default function EtherealGlowPage() {
                     >
                         <Image
                             src={beautyImages.hero}
-                            alt="Spa Interior"
+                            alt="Интерьер спа-центра"
                             fill
                             className="object-cover"
                             priority
@@ -125,7 +125,7 @@ export default function EtherealGlowPage() {
                         <div className="absolute inset-0 bg-[#E8F3E8] rounded-full blur-3xl opacity-50 -z-10" />
                         <Image
                             src={beautyImages.product}
-                            alt="Signature Serum"
+                            alt="Фирменная сыворотка"
                             fill
                             className="object-contain drop-shadow-2xl"
                         />
@@ -134,7 +134,7 @@ export default function EtherealGlowPage() {
                         <span className="text-[#8BA88E] uppercase tracking-widest text-xs font-bold mb-4 block">
                             Бестселлер
                         </span>
-                        <h2 className="text-4xl font-light mb-6">Ночная сыворотка Luminous</h2>
+                        <h2 className="text-4xl font-light mb-6">Ночная сыворотка «Сияние»</h2>
                         <p className="text-lg opacity-60 mb-8 leading-relaxed">
                             Мощная смесь гиалуроновой кислоты, витамина С и редких растительных экстрактов.
                             Восстанавливает кожу пока вы спите, даря заметное сияние утром.
@@ -164,7 +164,7 @@ export default function EtherealGlowPage() {
             <section className="py-32 px-6 flex justify-center items-center relative overflow-hidden">
                 <Image
                     src={beautyImages.interior}
-                    alt="Spa background"
+                    alt="Фон спа-центра"
                     fill
                     className="object-cover opacity-10"
                 />

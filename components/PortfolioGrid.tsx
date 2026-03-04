@@ -6,53 +6,52 @@ import Link from "next/link";
 
 const projects = [
     {
-        title: "JenSilver Jewelry",
-        description: "Интернет-магазин ювелирных изделий на Tilda. Изысканный дизайн и удобная навигация.",
+        title: "Ювелирный бренд «ДженСильвер»",
+        description: "Интернет-магазин украшений с акцентом на премиальную подачу и удобный путь к покупке.",
         link: "https://jensilver.tilda.ws/",
-        tags: ["Tilda", "E-commerce", "Design"],
+        tags: ["Интернет-магазин", "Тильда", "Каталог"],
     },
     {
         title: "Пэн Доре",
-        description: "Концепт сайта ремесленной пекарни. Теплый дизайн, анимации и атмосфера уюта.",
+        description: "Концепт сайта ремесленной пекарни. Теплая атмосфера, вкусная визуальная подача и эмоция бренда.",
         link: "/portfolio/pain-dore",
-        tags: ["Concept", "Next.js", "Animation"],
+        tags: ["Концепт", "Сайт на коде", "Анимация"],
     },
     {
         title: "Эфирное Сияние",
-        description: "Минималистичный лендинг для бренда косметики. Чистота, воздух и мягкая анимация.",
+        description: "Минималистичный лендинг для косметического бренда с мягкой подачей и фокусом на доверие.",
         link: "/portfolio/ethereal-glow",
-        tags: ["Concept", "Minimalism", "Beauty"],
+        tags: ["Концепт", "Минимализм", "Красота"],
     },
     {
         title: "Городская Среда",
-        description: "Брутализм и архитектура. Строгие линии, горизонтальный скролл и монохром.",
+        description: "Брутальный архитектурный стиль, контрастная типографика и уверенная визуальная структура.",
         link: "/portfolio/urban-space",
-        tags: ["Concept", "Brutalism", "Architecture"],
+        tags: ["Концепт", "Архитектура", "Брутализм"],
     },
     {
         title: "Нуар Мод",
-        description: "Fashion-бренд. Агрессивный стиль, типографика и глитч-эффекты.",
+        description: "Модный бренд с сильным характером: резкая графика, ритм и дерзкая подача коллекции.",
         link: "/portfolio/noir-mode",
-        tags: ["Concept", "Fashion", "Dark Mode"],
+        tags: ["Концепт", "Мода", "Глитч"],
     },
     {
         title: "Брю Лаб",
-        description: "Кофейня с характером. Индустриальный стиль, теплая палитра и акценты.",
+        description: "Сайт для кофейни с индустриальной эстетикой и акцентом на продукт, атмосферу и меню.",
         link: "/portfolio/brew-lab",
-        tags: ["Concept", "Cafe", "Industrial"],
+        tags: ["Концепт", "Кофейня", "Индустрия"],
     },
     {
         title: "Дзен Движение",
-        description: "Студия йоги. Природа, спокойствие и плавные переходы.",
+        description: "Спокойная визуальная среда для студии йоги: мягкий ритм, воздух и продуманная навигация.",
         link: "/portfolio/zen-move",
-        tags: ["Concept", "Health", "Zen"],
+        tags: ["Концепт", "Студия йоги", "Баланс"],
     },
     {
-        title: "Галерея Lumina",
-        description: "Иммерсивная цифровая галерея. WebGL эффекты, неоновая эстетика и будущее искусства.",
+        title: "Галерея Люмина",
+        description: "Иммерсивная цифровая галерея с визуальными эффектами, глубиной и современным арт-настроением.",
         link: "/portfolio/lumina-art",
-        image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2600&auto=format&fit=crop",
-        tags: ["Digital Art", "WebGL", "Gallery"],
+        tags: ["Цифровое искусство", "Галерея", "Неон"],
     },
 ];
 
@@ -67,10 +66,10 @@ export default function PortfolioGrid() {
                     className="mb-16"
                 >
                     <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4 italic">
-                        Шаблоны <span className="text-emerald-500">сайтов</span>
+                        Кейсы и <span className="text-emerald-500">концепты</span>
                     </h2>
                     <p className="text-emerald-100/50 text-lg uppercase tracking-widest">
-                        Это шаблоны настоящих сайтов, некоторые ссылки и кнопки не подключены.
+                        Работы в разных нишах: от личного бренда до интернет-магазина.
                     </p>
                 </motion.div>
 
@@ -78,12 +77,16 @@ export default function PortfolioGrid() {
                     {projects.map((project, index) => {
                         const isExternal = project.link.startsWith("http");
 
-                        // Common content for both link types
                         const cardContent = (
                             <>
+                                <motion.div
+                                    className="absolute -inset-x-24 -top-12 h-24 bg-gradient-to-r from-transparent via-emerald-300/30 to-transparent blur-2xl opacity-0 group-hover:opacity-100"
+                                    animate={{ x: ["-20%", "18%", "-20%"] }}
+                                    transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+                                />
                                 <div className="relative z-10">
                                     <div className="flex justify-between items-start mb-6">
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             {project.tags.map((tag) => (
                                                 <span key={tag} className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                                     {tag}
@@ -93,7 +96,7 @@ export default function PortfolioGrid() {
                                         {isExternal && <ExternalLink className="w-5 h-5 text-emerald-500/40 group-hover:text-emerald-500 transition-colors" />}
                                     </div>
 
-                                    <h3 className="text-3xl font-bold mb-4 text-emerald-50 italic group-hover:translate-x-2 transition-transform capitalize">
+                                    <h3 className="text-3xl font-bold mb-4 text-emerald-50 italic group-hover:translate-x-2 transition-transform">
                                         {project.title}
                                     </h3>
                                     <p className="text-emerald-100/60 leading-relaxed mb-8">
@@ -113,7 +116,6 @@ export default function PortfolioGrid() {
                                     </div>
                                 </div>
 
-                                {/* Decorative accent */}
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] group-hover:bg-emerald-500/10 transition-colors" />
                             </>
                         );
@@ -125,8 +127,9 @@ export default function PortfolioGrid() {
                                 key={project.title}
                                 initial={{ opacity: 0, y: 30 }}
                                 whileInView={{ opacity: 1, y: 0 }}
+                                whileHover={{ y: -6 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: index * 0.2 }}
+                                transition={{ delay: index * 0.12, duration: 0.55 }}
                             >
                                 {isExternal ? (
                                     <a

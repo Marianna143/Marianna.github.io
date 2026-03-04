@@ -9,19 +9,24 @@ export default function Footer() {
                 <motion.h3
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
-                    className="text-4xl font-bold tracking-tighter italic mb-8"
+                    className="text-4xl font-bold tracking-tighter italic mb-4"
                 >
-                    Marianna<span className="text-emerald-500">.</span>
+                    Марианна<span className="text-emerald-500">.</span>
                 </motion.h3>
 
-                <div className="flex gap-8 mb-12">
-                    <a href="#projects" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Работы</a>
+                <p className="text-emerald-100/50 text-sm mb-8 max-w-xl">
+                    Создаю сайты, которые помогают продавать, выделяться среди конкурентов и вызывать доверие с первого экрана.
+                </p>
+
+                <div className="flex gap-8 mb-10">
+                    <a href="#projects" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Кейсы</a>
                     <a href="#pricing" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Цены</a>
-                    <a href="https://t.me/workvinil" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Telegram</a>
+                    <a href="#contact" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Заявка</a>
+                    <a href="https://t.me/workvinil" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Телеграм</a>
                 </div>
 
                 <p className="text-emerald-500/20 text-xs tracking-widest uppercase">
-                    © 2026 Crafted by Marianna.
+                    © 2026
                 </p>
             </div>
         </footer>

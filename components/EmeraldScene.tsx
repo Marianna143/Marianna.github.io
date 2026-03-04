@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Sphere, MeshDistortMaterial, Float, Stars } from "@react-three/drei";
 import * as THREE from "three";
@@ -48,15 +48,13 @@ function EmeraldAura() {
 }
 
 export default function EmeraldScene() {
-    const containerRef = useRef<HTMLDivElement>(null!);
-
     return (
-        <div ref={containerRef} className="fixed inset-0 z-[-1] opacity-60 pointer-events-none bg-black">
+        <div className="fixed inset-0 z-[-1] opacity-60 pointer-events-none bg-black">
             <Canvas
                 camera={{ position: [0, 0, 5], fov: 75 }}
                 dpr={[1, 2]}
                 gl={{ antialias: true, alpha: true }}
-                eventSource={typeof document !== 'undefined' ? document.body : undefined}
+                eventSource={document.body}
                 eventPrefix="client"
             >
                 <color attach="background" args={["#000000"]} />
@@ -79,5 +77,3 @@ export default function EmeraldScene() {
         </div>
     );
 }
-
-

@@ -43,7 +43,7 @@ export default function ZenMovePage() {
                 >
                     <Image
                         src={yogaImages.hero}
-                        alt="Yoga Session"
+                        alt="Занятие йогой"
                         fill
                         className="object-cover"
                         priority
@@ -125,7 +125,7 @@ export default function ZenMovePage() {
                         transition={{ duration: 1.5 }}
                         className="w-1/3 aspect-[3/4] relative rounded-2xl overflow-hidden mt-20"
                     >
-                        <Image src={yogaImages.pose} alt="Pose" fill className="object-cover" />
+                        <Image src={yogaImages.pose} alt="Поза йоги" fill className="object-cover" />
                     </motion.div>
                     <motion.div
                         initial={{ y: 100 }}
@@ -133,7 +133,7 @@ export default function ZenMovePage() {
                         transition={{ duration: 1.5, delay: 0.2 }}
                         className="w-1/3 aspect-[3/4] relative rounded-2xl overflow-hidden"
                     >
-                        <Image src={yogaImages.studio} alt="Studio" fill className="object-cover" />
+                        <Image src={yogaImages.studio} alt="Студия" fill className="object-cover" />
                     </motion.div>
                     <motion.div
                         initial={{ y: 100 }}
@@ -141,7 +141,7 @@ export default function ZenMovePage() {
                         transition={{ duration: 1.5, delay: 0.4 }}
                         className="w-1/3 aspect-[3/4] relative rounded-2xl overflow-hidden mt-40"
                     >
-                        <Image src={yogaImages.meditation} alt="Meditation" fill className="object-cover" />
+                        <Image src={yogaImages.meditation} alt="Медитация" fill className="object-cover" />
                     </motion.div>
                 </div>
             </section>

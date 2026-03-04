@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { motion, useSpring } from "framer-motion";
 
 export default function CustomCursor() {
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
     const springConfig = { damping: 25, stiffness: 200 };
     const cursorX = useSpring(0, springConfig);
     const cursorY = useSpring(0, springConfig);

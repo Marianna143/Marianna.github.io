@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowLeft, ArrowUpRight, Grid, Layers, Box } from "lucide-react";
-import { useRef } from "react";
+import { motion } from "framer-motion";
+import { ArrowLeft, ArrowUpRight, Grid, Layers } from "lucide-react";
 
 const architectureImages = {
     hero: "https://images.unsplash.com/photo-1486718448742-163732cd1544?q=80&w=2600&auto=format&fit=crop", // Brutalist/Modern
@@ -17,20 +16,12 @@ const architectureImages = {
 const safeDetailImage = "https://images.unsplash.com/photo-1516455590571-18256e5bb9ff?q=80&w=2600&auto=format&fit=crop"; // Abstract concrete
 
 export default function UrbanSpacePage() {
-    const containerRef = useRef(null);
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ["start start", "end end"]
-    });
-
-    const x = useTransform(scrollYProgress, [0, 1], ["0%", "-50%"]);
-
     const scrollToProjects = () => {
         document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
     };
 
     return (
-        <main ref={containerRef} className="bg-[#121212] text-[#E0E0E0] font-sans selection:bg-white selection:text-black">
+        <main className="bg-[#121212] text-[#E0E0E0] font-sans selection:bg-white selection:text-black">
             {/* Navigation */}
             <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center p-8 bg-gradient-to-b from-[#121212] to-transparent mix-blend-difference">
                 <Link href="/" className="group flex items-center gap-4">

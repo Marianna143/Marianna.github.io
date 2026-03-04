@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowLeft, ArrowDown, X } from "lucide-react";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowLeft, ArrowDown } from "lucide-react";
 
 const fashionImages = {
     hero: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=2000&auto=format&fit=crop", // Moody fashion
@@ -52,7 +51,7 @@ export default function NoirModePage() {
                     className="absolute top-1/4 left-10 md:left-20 mix-blend-difference z-10"
                 >
                     <p className="text-[10rem] md:text-[20rem] font-bold leading-none opacity-20 select-none">
-                        V
+                        Н
                     </p>
                 </motion.div>
 
@@ -87,7 +86,7 @@ export default function NoirModePage() {
                     <div className="aspect-[3/4] relative group overflow-hidden bg-black">
                         <Image
                             src={fashionImages.look1}
-                            alt="Look 01"
+                            alt="Образ 01"
                             fill
                             className="object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500"
                         />
@@ -99,7 +98,7 @@ export default function NoirModePage() {
                     <div className="aspect-[3/4] relative group overflow-hidden bg-black lg:translate-y-16">
                         <Image
                             src={fashionImages.look2}
-                            alt="Look 02"
+                            alt="Образ 02"
                             fill
                             className="object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500"
                         />
@@ -111,7 +110,7 @@ export default function NoirModePage() {
                     <div className="aspect-[3/4] relative group overflow-hidden bg-black">
                         <Image
                             src={fashionImages.look3}
-                            alt="Look 03"
+                            alt="Образ 03"
                             fill
                             className="object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500"
                         />
@@ -135,8 +134,8 @@ export default function NoirModePage() {
                         / Манифест
                     </h3>
                     <p className="text-2xl md:text-5xl font-bold leading-tight uppercase tracking-tight">
-                        "Мы не создаем одежду. <br />
-                        Мы куем <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-700">броню</span> для современной души."
+                        «Мы не создаем одежду. <br />
+                        Мы куем <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-700">броню</span> для современной души.»
                     </p>
                 </div>
             </section>
@@ -169,14 +168,14 @@ export default function NoirModePage() {
                 <div>
                     <h4 className="font-bold text-xl mb-4">НУАР МОД</h4>
                     <ul className="space-y-2 text-sm text-neutral-500 font-mono">
-                        <li className="hover:text-white cursor-pointer transition-colors">Instagram</li>
-                        <li className="hover:text-white cursor-pointer transition-colors">TikTok</li>
-                        <li className="hover:text-white cursor-pointer transition-colors">Press</li>
+                        <li className="hover:text-white cursor-pointer transition-colors">Сообщество</li>
+                        <li className="hover:text-white cursor-pointer transition-colors">Канал бренда</li>
+                        <li className="hover:text-white cursor-pointer transition-colors">Пресса</li>
                     </ul>
                 </div>
                 <div className="mt-8 md:mt-0 text-right">
                     <p className="text-[10px] uppercase tracking-widest text-neutral-600">
-                        © 2026 Noir Mode Inc.
+                        © 2026 Нуар Мод
                     </p>
                 </div>
             </footer>
