@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type CSSProperties } from "react";
+import { useMemo, useRef, type CSSProperties } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Stars } from "@react-three/drei";
 import * as THREE from "three";
@@ -69,6 +69,37 @@ type ShootingStarStyle = CSSProperties & {
     "--meteor-duration": string;
     "--meteor-delay": string;
 };
+
+type SkyStarStyle = CSSProperties & {
+    "--star-size": string;
+    "--star-opacity": string;
+    "--twinkle-duration": string;
+    "--twinkle-delay": string;
+};
+
+function createSkyStars(count: number, seed: number): SkyStarStyle[] {
+    let state = seed >>> 0;
+    const rand = () => {
+        state = (state * 1664525 + 1013904223) >>> 0;
+        return state / 4294967296;
+    };
+
+    return Array.from({ length: count }, () => {
+        const size = 0.8 + rand() * 1.7;
+        const opacity = 0.25 + rand() * 0.72;
+        const duration = 3.2 + rand() * 6.8;
+        const delay = -rand() * 8;
+
+        return {
+            left: `${(rand() * 100).toFixed(2)}%`,
+            top: `${(rand() * 100).toFixed(2)}%`,
+            "--star-size": `${size.toFixed(2)}px`,
+            "--star-opacity": opacity.toFixed(2),
+            "--twinkle-duration": `${duration.toFixed(2)}s`,
+            "--twinkle-delay": `${delay.toFixed(2)}s`,
+        };
+    });
+}
 
 const shootingStarStyles: ShootingStarStyle[] = [
     {
@@ -250,6 +281,8 @@ const shootingStarStyles: ShootingStarStyle[] = [
 ];
 
 export default function EmeraldScene() {
+    const skyStars = useMemo(() => createSkyStars(240, 20260305), []);
+
     return (
         <div
             className="fixed inset-0 z-[-1] pointer-events-none bg-black relative overflow-hidden"
@@ -269,6 +302,12 @@ export default function EmeraldScene() {
                 <pointLight position={[-4.5, -3.5, -3]} intensity={0.42} color="#047857" />
                 <DeepStarLayers />
             </Canvas>
+
+            <div className="sky-stars">
+                {skyStars.map((style, index) => (
+                    <span key={index} className="sky-star" style={style} />
+                ))}
+            </div>
 
             <div className="starfield-overlay" />
 

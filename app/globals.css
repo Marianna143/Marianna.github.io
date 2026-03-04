@@ -29,12 +29,6 @@
 
 body {
     background-color: var(--background);
-    background-image:
-        radial-gradient(circle at center, rgba(217, 255, 239, 0.2) 0 1px, transparent 1.45px),
-        radial-gradient(circle at center, rgba(157, 255, 219, 0.14) 0 1px, transparent 1.45px),
-        radial-gradient(circle at center, rgba(110, 231, 183, 0.1) 0 0.9px, transparent 1.35px);
-    background-size: 180px 180px, 260px 260px, 340px 340px;
-    background-position: 0 0, 80px 130px, 130px 55px;
     color: var(--foreground);
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
@@ -110,11 +104,29 @@ body {
     overflow: hidden;
 }
 
+.sky-stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.sky-star {
+    position: absolute;
+    width: var(--star-size, 1.4px);
+    height: var(--star-size, 1.4px);
+    border-radius: 999px;
+    opacity: var(--star-opacity, 0.5);
+    background: rgba(224, 255, 243, 0.95);
+    box-shadow: 0 0 5px rgba(183, 255, 229, 0.55);
+    animation: twinkle var(--twinkle-duration, 6s) ease-in-out infinite;
+    animation-delay: var(--twinkle-delay, 0s);
+}
+
 .starfield-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.58;
+    opacity: 0.34;
     background-image:
         radial-gradient(circle at center, rgba(229, 255, 245, 0.55) 0 1px, transparent 1.4px),
         radial-gradient(circle at center, rgba(180, 255, 226, 0.42) 0 1px, transparent 1.5px),
@@ -131,6 +143,19 @@ body {
 
     100% {
         transform: translate3d(2vw, -3vh, 0);
+    }
+}
+
+@keyframes twinkle {
+    0%,
+    100% {
+        opacity: 0.22;
+        transform: scale(0.86);
+    }
+
+    50% {
+        opacity: var(--star-opacity, 0.5);
+        transform: scale(1.1);
     }
 }
 
