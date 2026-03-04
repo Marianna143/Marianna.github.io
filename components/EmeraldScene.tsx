@@ -19,7 +19,7 @@ function EmeraldAura() {
         // Mouse responsiveness (lerp for smoothness)
         // Position following
         const targetX = mouse.x * 1.5;
-        const targetY = mouse.y * 1.5;
+        const targetY = mouse.y * 1.2 - 0.72;
 
         mesh.current.position.x = THREE.MathUtils.lerp(mesh.current.position.x, targetX, 0.05);
         mesh.current.position.y = THREE.MathUtils.lerp(mesh.current.position.y, targetY, 0.05);
@@ -31,16 +31,16 @@ function EmeraldAura() {
 
     return (
         <Float speed={1.1} rotationIntensity={0.35} floatIntensity={0.65}>
-            <Sphere args={[1, 44, 44]} scale={2.35} ref={mesh}>
+            <Sphere args={[1, 44, 44]} scale={2.18} ref={mesh}>
                 <MeshDistortMaterial
                     color="#10b981"
                     attach="material"
-                    distort={0.28}
-                    speed={1.2}
+                    distort={0.22}
+                    speed={1}
                     roughness={0.15}
                     metalness={0.78}
                     emissive="#059669"
-                    emissiveIntensity={0.28}
+                    emissiveIntensity={0.2}
                 />
             </Sphere>
         </Float>
@@ -65,44 +65,34 @@ function DeepStarLayers() {
         <>
             <group ref={farRef}>
                 <Stars
-                    radius={180}
-                    depth={95}
-                    count={1700}
-                    factor={2.2}
+                    radius={210}
+                    depth={120}
+                    count={620}
+                    factor={0.95}
                     saturation={0}
                     fade
-                    speed={0.12}
+                    speed={0.04}
                 />
             </group>
 
             <group ref={midRef}>
                 <Stars
-                    radius={95}
-                    depth={42}
-                    count={1300}
-                    factor={3.2}
+                    radius={130}
+                    depth={72}
+                    count={360}
+                    factor={1.35}
                     saturation={0}
                     fade
-                    speed={0.28}
+                    speed={0.08}
                 />
             </group>
-
-            <Stars
-                radius={50}
-                depth={20}
-                count={320}
-                factor={4.8}
-                saturation={0}
-                fade
-                speed={0.5}
-            />
         </>
     );
 }
 
 export default function EmeraldScene() {
     return (
-        <div className="fixed inset-0 z-[-1] opacity-60 pointer-events-none bg-black relative overflow-hidden">
+        <div className="fixed inset-0 z-[-1] pointer-events-none bg-black/95 relative overflow-hidden" style={{ opacity: 0.43 }}>
             <Canvas
                 camera={{ position: [0, 0, 5], fov: 75 }}
                 dpr={[1, 1.25]}

@@ -106,12 +106,12 @@ body {
 
 .shooting-star {
     position: absolute;
-    width: 130px;
-    height: 1.5px;
+    width: 74px;
+    height: 1px;
     border-radius: 999px;
     opacity: 0;
-    background: linear-gradient(90deg, rgba(196, 255, 236, 0), rgba(196, 255, 236, 0.9), rgba(196, 255, 236, 0));
-    filter: drop-shadow(0 0 4px rgba(168, 255, 224, 0.55));
+    background: linear-gradient(90deg, rgba(196, 255, 236, 0), rgba(196, 255, 236, 0.56), rgba(196, 255, 236, 0));
+    filter: drop-shadow(0 0 2px rgba(168, 255, 224, 0.32));
     transform-origin: left center;
 }
 
@@ -119,50 +119,50 @@ body {
     content: "";
     position: absolute;
     right: 0;
-    top: -1px;
-    width: 4px;
-    height: 4px;
+    top: -0.5px;
+    width: 2px;
+    height: 2px;
     border-radius: 999px;
-    background: rgba(210, 255, 239, 0.95);
-    box-shadow: 0 0 10px rgba(197, 255, 232, 0.75);
+    background: rgba(210, 255, 239, 0.8);
+    box-shadow: 0 0 4px rgba(197, 255, 232, 0.45);
 }
 
 .star-a {
-    top: 16%;
-    right: 6%;
-    animation: shootingStar 17s linear infinite;
+    top: 18%;
+    right: -8%;
+    animation: shootingStar 96s linear infinite;
 }
 
 .star-b {
-    top: 30%;
-    right: 12%;
-    animation: shootingStar 22s linear infinite 5s;
+    top: 28%;
+    right: -5%;
+    animation: shootingStar 128s linear infinite 33s;
 }
 
 .star-c {
-    top: 22%;
-    right: -4%;
-    animation: shootingStar 28s linear infinite 11s;
+    top: 34%;
+    right: -12%;
+    animation: shootingStar 161s linear infinite 71s;
 }
 
 @keyframes shootingStar {
-    0%, 84%, 100% {
+    0%, 97%, 100% {
         opacity: 0;
         transform: translate3d(0, 0, 0) rotate(-24deg) scaleX(0.25);
     }
 
-    85% {
-        opacity: 0.92;
+    97.2% {
+        opacity: 0.42;
     }
 
-    92% {
-        opacity: 0.7;
-        transform: translate3d(-34vw, 20vh, 0) rotate(-24deg) scaleX(1);
+    98.2% {
+        opacity: 0.26;
+        transform: translate3d(-18vw, 9vh, 0) rotate(-24deg) scaleX(0.95);
     }
 
-    96% {
+    99.1% {
         opacity: 0;
-        transform: translate3d(-48vw, 28vh, 0) rotate(-24deg) scaleX(0.75);
+        transform: translate3d(-24vw, 14vh, 0) rotate(-24deg) scaleX(0.65);
     }
 }
 
