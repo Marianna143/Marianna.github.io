@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Great_Vibes, Marck_Script, Plus_Jakarta_Sans } from "next/font/google";
+import { Great_Vibes, Marck_Script, Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import BackgroundScene from "@/components/BackgroundScene";
 import SmoothScroll from "@/components/SmoothScroll";
@@ -21,6 +21,11 @@ const marckScript = Marck_Script({
     weight: "400",
     subsets: ["cyrillic", "latin"],
     variable: "--font-marck-script",
+});
+
+const playfairDisplay = Playfair_Display({
+    subsets: ["cyrillic", "latin"],
+    variable: "--font-luxury-display",
 });
 
 export const metadata: Metadata = {
@@ -79,7 +84,10 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="ru" className={`${plusJakartaSans.variable} ${greatVibes.variable} ${marckScript.variable}`}>
+        <html
+            lang="ru"
+            className={`${plusJakartaSans.variable} ${greatVibes.variable} ${marckScript.variable} ${playfairDisplay.variable}`}
+        >
             <body className="font-sans antialiased">
                 <BackgroundScene />
                 <div className="noise-overlay" />
