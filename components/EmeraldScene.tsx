@@ -47,9 +47,62 @@ function EmeraldAura() {
     );
 }
 
+function DeepStarLayers() {
+    const farRef = useRef<THREE.Group>(null!);
+    const midRef = useRef<THREE.Group>(null!);
+
+    useFrame((state, delta) => {
+        const time = state.clock.getElapsedTime();
+
+        farRef.current.rotation.y -= delta * 0.003;
+        farRef.current.rotation.x = Math.sin(time * 0.09) * 0.025;
+
+        midRef.current.rotation.y += delta * 0.006;
+        midRef.current.rotation.x = Math.cos(time * 0.08) * 0.03;
+    });
+
+    return (
+        <>
+            <group ref={farRef}>
+                <Stars
+                    radius={180}
+                    depth={95}
+                    count={1700}
+                    factor={2.2}
+                    saturation={0}
+                    fade
+                    speed={0.12}
+                />
+            </group>
+
+            <group ref={midRef}>
+                <Stars
+                    radius={95}
+                    depth={42}
+                    count={1300}
+                    factor={3.2}
+                    saturation={0}
+                    fade
+                    speed={0.28}
+                />
+            </group>
+
+            <Stars
+                radius={50}
+                depth={20}
+                count={320}
+                factor={4.8}
+                saturation={0}
+                fade
+                speed={0.5}
+            />
+        </>
+    );
+}
+
 export default function EmeraldScene() {
     return (
-        <div className="fixed inset-0 z-[-1] opacity-60 pointer-events-none bg-black">
+        <div className="fixed inset-0 z-[-1] opacity-60 pointer-events-none bg-black relative overflow-hidden">
             <Canvas
                 camera={{ position: [0, 0, 5], fov: 75 }}
                 dpr={[1, 1.25]}
@@ -58,15 +111,7 @@ export default function EmeraldScene() {
                 eventPrefix="client"
             >
                 <color attach="background" args={["#000000"]} />
-                <Stars
-                    radius={100}
-                    depth={50}
-                    count={3200}
-                    factor={3}
-                    saturation={0}
-                    fade
-                    speed={0.75}
-                />
+                <DeepStarLayers />
 
                 <ambientLight intensity={0.5} />
                 <pointLight position={[10, 10, 10]} intensity={2} color="#10b981" />
@@ -74,6 +119,12 @@ export default function EmeraldScene() {
                 <spotLight position={[0, 10, 0]} intensity={2.5} color="#ffffff" angle={0.4} penumbra={1} />
                 <EmeraldAura />
             </Canvas>
+
+            <div className="shooting-stars">
+                <span className="shooting-star star-a" />
+                <span className="shooting-star star-b" />
+                <span className="shooting-star star-c" />
+            </div>
         </div>
     );
 }
