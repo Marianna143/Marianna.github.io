@@ -24,7 +24,7 @@ const proofBadges = [
 
 export default function HeroSection() {
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 text-center">
+        <section className="relative min-h-screen flex items-start justify-center overflow-hidden px-6 pt-4 md:pt-8 text-center">
             <motion.div
                 className="absolute -top-32 -left-20 w-72 h-72 rounded-full bg-emerald-500/15 blur-[100px]"
                 animate={{ x: [0, 40, -20, 0], y: [0, 35, 15, 0], scale: [1, 1.15, 0.95, 1] }}
