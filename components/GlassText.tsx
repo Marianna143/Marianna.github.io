@@ -17,72 +17,41 @@ export default function GlassText() {
       >
         <defs>
           <linearGradient id="neonStroke" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#93EFD0" />
-            <stop offset="52%" stopColor="#63DDB5" />
-            <stop offset="100%" stopColor="#38BE8E" />
+            <stop offset="0%" stopColor="#B6F8E2" />
+            <stop offset="52%" stopColor="#8AECCB" />
+            <stop offset="100%" stopColor="#61D7AC" />
           </linearGradient>
           <linearGradient id="finalFill" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#7CEAC6" />
-            <stop offset="52%" stopColor="#48CD9F" />
-            <stop offset="100%" stopColor="#28A878" />
+            <stop offset="0%" stopColor="#8DEFD1" />
+            <stop offset="52%" stopColor="#66DDB6" />
+            <stop offset="100%" stopColor="#45C698" />
           </linearGradient>
-          <radialGradient id="heroHalo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(16,185,129,0.22)" />
-            <stop offset="35%" stopColor="rgba(16,185,129,0.12)" />
-            <stop offset="100%" stopColor="rgba(16,185,129,0)" />
-          </radialGradient>
         </defs>
-
-        <motion.circle
-          cx="33.5"
-          cy="7"
-          r="8.1"
-          fill="url(#heroHalo)"
-          initial={{ scale: 0.92, opacity: 0 }}
-          animate={{ scale: [0.92, 1.02, 0.97], opacity: [0, 0.45, 0.25] }}
-          transition={{ duration: 3.4, ease: "easeOut" }}
-          style={{ filter: "blur(0.8px)" }}
-        />
 
         <motion.path
           d={LOGO_PATH}
           fill="none"
           stroke="url(#neonStroke)"
-          strokeWidth={0.2}
+          strokeWidth={0.18}
           strokeLinecap="round"
           strokeLinejoin="round"
-          initial={{ pathLength: 0, opacity: 0.2 }}
+          initial={{ pathLength: 0, opacity: 0.34 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 5.8, ease: [0.37, 0, 0.2, 1] }}
+          transition={{ duration: 1.45, ease: [0.35, 0, 0.2, 1] }}
           style={{
-            filter:
-              "drop-shadow(0 0 3px rgba(120, 240, 200, 0.45)) drop-shadow(0 0 10px rgba(16, 185, 129, 0.3))",
-          }}
-        />
-
-        <motion.path
-          d={LOGO_PATH}
-          fill="url(#finalFill)"
-          stroke="none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0, 0.66, 0.6] }}
-          transition={{ duration: 7.2, times: [0, 0.7, 0.86, 1], ease: "easeOut" }}
-          style={{
-            filter:
-              "drop-shadow(0 0 5px rgba(150, 255, 220, 0.2))",
+            filter: "drop-shadow(0 0 4px rgba(136, 235, 197, 0.22))",
           }}
         />
 
         <motion.path
           d={LOGO_PATH}
           fill="none"
-          stroke="rgba(184, 255, 228, 0.4)"
-          strokeWidth={0.07}
+          stroke="url(#finalFill)"
           strokeLinecap="round"
           strokeLinejoin="round"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0, 0.35, 0.2] }}
-          transition={{ duration: 7.2, times: [0, 0.72, 0.86, 1], ease: "easeOut" }}
+          initial={{ opacity: 0, strokeWidth: 0.14 }}
+          animate={{ opacity: 0.92, strokeWidth: 0.24 }}
+          transition={{ duration: 0.42, delay: 1.02, ease: "easeOut" }}
         />
       </motion.svg>
     </div>
