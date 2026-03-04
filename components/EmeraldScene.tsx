@@ -18,8 +18,8 @@ function EmeraldAura() {
 
         // Mouse responsiveness (lerp for smoothness)
         // Position following
-        const targetX = mouse.x * 1.5;
-        const targetY = mouse.y * 1.2 - 0.72;
+        const targetX = THREE.MathUtils.clamp(mouse.x * 0.8, -0.55, 0.55);
+        const targetY = THREE.MathUtils.clamp(mouse.y * 0.55 - 0.04, -0.34, 0.28);
 
         mesh.current.position.x = THREE.MathUtils.lerp(mesh.current.position.x, targetX, 0.05);
         mesh.current.position.y = THREE.MathUtils.lerp(mesh.current.position.y, targetY, 0.05);
@@ -30,17 +30,17 @@ function EmeraldAura() {
     });
 
     return (
-        <Float speed={1.1} rotationIntensity={0.35} floatIntensity={0.65}>
-            <Sphere args={[1, 44, 44]} scale={2.18} ref={mesh}>
+        <Float speed={0.95} rotationIntensity={0.3} floatIntensity={0.52}>
+            <Sphere args={[1, 44, 44]} scale={2.46} ref={mesh}>
                 <MeshDistortMaterial
                     color="#10b981"
                     attach="material"
-                    distort={0.22}
-                    speed={1}
+                    distort={0.24}
+                    speed={1.05}
                     roughness={0.15}
                     metalness={0.78}
                     emissive="#059669"
-                    emissiveIntensity={0.2}
+                    emissiveIntensity={0.26}
                 />
             </Sphere>
         </Float>
@@ -65,34 +65,44 @@ function DeepStarLayers() {
         <>
             <group ref={farRef}>
                 <Stars
-                    radius={210}
-                    depth={120}
-                    count={620}
-                    factor={0.95}
+                    radius={240}
+                    depth={140}
+                    count={1500}
+                    factor={1.55}
                     saturation={0}
                     fade
-                    speed={0.04}
+                    speed={0.07}
                 />
             </group>
 
             <group ref={midRef}>
                 <Stars
-                    radius={130}
-                    depth={72}
-                    count={360}
-                    factor={1.35}
+                    radius={140}
+                    depth={90}
+                    count={1000}
+                    factor={1.85}
                     saturation={0}
                     fade
-                    speed={0.08}
+                    speed={0.11}
                 />
             </group>
+
+            <Stars
+                radius={72}
+                depth={32}
+                count={360}
+                factor={2.3}
+                saturation={0}
+                fade
+                speed={0.16}
+            />
         </>
     );
 }
 
 export default function EmeraldScene() {
     return (
-        <div className="fixed inset-0 z-[-1] pointer-events-none bg-black/95 relative overflow-hidden" style={{ opacity: 0.43 }}>
+        <div className="fixed inset-0 z-[-1] pointer-events-none bg-black relative overflow-hidden" style={{ opacity: 0.58 }}>
             <Canvas
                 camera={{ position: [0, 0, 5], fov: 75 }}
                 dpr={[1, 1.25]}
@@ -103,10 +113,10 @@ export default function EmeraldScene() {
                 <color attach="background" args={["#000000"]} />
                 <DeepStarLayers />
 
-                <ambientLight intensity={0.5} />
-                <pointLight position={[10, 10, 10]} intensity={2} color="#10b981" />
-                <pointLight position={[-10, -10, -10]} intensity={1} color="#064e3b" />
-                <spotLight position={[0, 10, 0]} intensity={2.5} color="#ffffff" angle={0.4} penumbra={1} />
+                <ambientLight intensity={0.56} />
+                <pointLight position={[10, 10, 10]} intensity={1.85} color="#10b981" />
+                <pointLight position={[-10, -10, -10]} intensity={1.1} color="#064e3b" />
+                <spotLight position={[0, 10, 0]} intensity={2.2} color="#ffffff" angle={0.4} penumbra={1} />
                 <EmeraldAura />
             </Canvas>
 
