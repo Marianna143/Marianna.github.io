@@ -12,6 +12,7 @@ type Project = {
     tags: string[];
     accent: string;
     glow: string;
+    previewImage: string;
 };
 
 const projects: Project[] = [
@@ -22,6 +23,7 @@ const projects: Project[] = [
         tags: ["Интернет-магазин", "Тильда", "Каталог"],
         accent: "from-emerald-300/45 via-cyan-300/20 to-transparent",
         glow: "rgba(110, 231, 183, 0.42)",
+        previewImage: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Пэн Доре",
@@ -30,6 +32,7 @@ const projects: Project[] = [
         tags: ["Концепт", "Сайт на коде", "Анимация"],
         accent: "from-amber-200/45 via-orange-200/20 to-transparent",
         glow: "rgba(251, 191, 36, 0.3)",
+        previewImage: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Эфирное Сияние",
@@ -38,6 +41,7 @@ const projects: Project[] = [
         tags: ["Концепт", "Минимализм", "Красота"],
         accent: "from-lime-200/40 via-emerald-100/20 to-transparent",
         glow: "rgba(190, 242, 100, 0.24)",
+        previewImage: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Городская Среда",
@@ -46,6 +50,7 @@ const projects: Project[] = [
         tags: ["Концепт", "Архитектура", "Брутализм"],
         accent: "from-zinc-300/35 via-slate-300/10 to-transparent",
         glow: "rgba(161, 161, 170, 0.24)",
+        previewImage: "https://images.unsplash.com/photo-1486718448742-163732cd1544?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Нуар Мод",
@@ -54,6 +59,7 @@ const projects: Project[] = [
         tags: ["Концепт", "Мода", "Глитч"],
         accent: "from-fuchsia-300/35 via-pink-300/15 to-transparent",
         glow: "rgba(244, 114, 182, 0.3)",
+        previewImage: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Брю Лаб",
@@ -62,6 +68,7 @@ const projects: Project[] = [
         tags: ["Концепт", "Кофейня", "Индустрия"],
         accent: "from-orange-300/35 via-amber-300/10 to-transparent",
         glow: "rgba(251, 146, 60, 0.25)",
+        previewImage: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Дзен Движение",
@@ -70,6 +77,7 @@ const projects: Project[] = [
         tags: ["Концепт", "Студия йоги", "Баланс"],
         accent: "from-sky-200/40 via-teal-200/10 to-transparent",
         glow: "rgba(56, 189, 248, 0.22)",
+        previewImage: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Галерея Люмина",
@@ -78,6 +86,7 @@ const projects: Project[] = [
         tags: ["Цифровое искусство", "Галерея", "Неон"],
         accent: "from-violet-300/35 via-cyan-300/15 to-transparent",
         glow: "rgba(129, 140, 248, 0.3)",
+        previewImage: "https://images.unsplash.com/photo-1620641788421-7f1c33b74305?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Атлас Права",
@@ -86,6 +95,7 @@ const projects: Project[] = [
         tags: ["Новый концепт", "Юридические услуги", "Премиум"],
         accent: "from-yellow-200/40 via-amber-200/10 to-transparent",
         glow: "rgba(250, 204, 21, 0.28)",
+        previewImage: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Северный Лофт",
@@ -94,6 +104,7 @@ const projects: Project[] = [
         tags: ["Новый концепт", "Интерьеры", "Портфолио"],
         accent: "from-stone-200/40 via-emerald-100/10 to-transparent",
         glow: "rgba(214, 211, 209, 0.26)",
+        previewImage: "https://images.unsplash.com/photo-1493666438817-866a91353ca9?q=80&w=2200&auto=format&fit=crop",
     },
     {
         title: "Пульс Фит",
@@ -102,6 +113,7 @@ const projects: Project[] = [
         tags: ["Новый концепт", "Фитнес", "Абонементы"],
         accent: "from-rose-300/40 via-red-300/15 to-transparent",
         glow: "rgba(251, 113, 133, 0.25)",
+        previewImage: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2200&auto=format&fit=crop",
     },
 ];
 
@@ -251,14 +263,25 @@ export default function PortfolioGrid() {
                                         {activeProject.description}
                                     </p>
 
-                                    <div className="rounded-2xl border border-emerald-400/20 bg-black/20 backdrop-blur-sm p-5 mb-7">
-                                        <p className="text-[11px] uppercase tracking-[0.25em] text-emerald-100/45 mb-3">
-                                            Структура экрана
-                                        </p>
-                                        <div className="space-y-2">
-                                            <div className="h-2 rounded-full bg-emerald-100/35 w-[76%]" />
-                                            <div className="h-2 rounded-full bg-emerald-100/25 w-[58%]" />
-                                            <div className="h-14 rounded-xl bg-emerald-500/14 border border-emerald-400/25" />
+                                    <div className="rounded-2xl border border-emerald-400/20 bg-black/20 overflow-hidden mb-7">
+                                        <div
+                                            className="relative h-44 md:h-48 bg-center bg-cover"
+                                            style={{
+                                                backgroundImage: [
+                                                    "linear-gradient(180deg, rgba(2, 6, 23, 0.2) 0%, rgba(2, 6, 23, 0.72) 100%)",
+                                                    `url('${activeProject.previewImage}')`,
+                                                ].join(", "),
+                                            }}
+                                        >
+                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(52,211,153,0.22),transparent_56%)]" />
+                                            <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between gap-3">
+                                                <p className="text-[11px] uppercase tracking-[0.25em] text-emerald-100/75">
+                                                    Превью проекта
+                                                </p>
+                                                <span className="text-[10px] uppercase tracking-[0.2em] text-emerald-200/70 border border-emerald-300/35 rounded-full px-2 py-1">
+                                                    {activeProject.tags[0]}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 

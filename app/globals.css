@@ -99,20 +99,49 @@ body {
 
 .shooting-stars {
     position: absolute;
-    inset: 0;
+    inset: -12vh -14vw;
     pointer-events: none;
     overflow: hidden;
 }
 
+.starfield-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.42;
+    background-image:
+        radial-gradient(circle at center, rgba(229, 255, 245, 0.55) 0 1px, transparent 1.4px),
+        radial-gradient(circle at center, rgba(180, 255, 226, 0.42) 0 1px, transparent 1.5px),
+        radial-gradient(circle at center, rgba(133, 243, 198, 0.35) 0 0.8px, transparent 1.2px);
+    background-size: 170px 170px, 230px 230px, 310px 310px;
+    background-position: 0 0, 60px 100px, 110px 35px;
+    animation: starfieldDrift 45s linear infinite alternate;
+}
+
+@keyframes starfieldDrift {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    100% {
+        transform: translate3d(2vw, -3vh, 0);
+    }
+}
+
 .shooting-star {
     position: absolute;
-    width: 74px;
+    left: var(--meteor-x, 108vw);
+    top: var(--meteor-y, 20vh);
+    width: 76px;
     height: 1px;
     border-radius: 999px;
     opacity: 0;
     background: linear-gradient(90deg, rgba(196, 255, 236, 0), rgba(196, 255, 236, 0.56), rgba(196, 255, 236, 0));
-    filter: drop-shadow(0 0 2px rgba(168, 255, 224, 0.32));
+    filter: drop-shadow(0 0 2px rgba(168, 255, 224, 0.4));
+    will-change: transform, opacity;
     transform-origin: left center;
+    animation: shootingStar var(--meteor-duration, 96s) linear infinite;
+    animation-delay: var(--meteor-delay, 0s);
 }
 
 .shooting-star::after {
@@ -127,42 +156,28 @@ body {
     box-shadow: 0 0 4px rgba(197, 255, 232, 0.45);
 }
 
-.star-a {
-    top: 18%;
-    right: -8%;
-    animation: shootingStar 96s linear infinite;
-}
-
-.star-b {
-    top: 28%;
-    right: -5%;
-    animation: shootingStar 128s linear infinite 33s;
-}
-
-.star-c {
-    top: 34%;
-    right: -12%;
-    animation: shootingStar 161s linear infinite 71s;
-}
-
 @keyframes shootingStar {
-    0%, 97%, 100% {
+    0%,
+    96.4%,
+    100% {
         opacity: 0;
-        transform: translate3d(0, 0, 0) rotate(-24deg) scaleX(0.25);
+        transform: translate3d(0, 0, 0) rotate(var(--meteor-angle, -24deg)) scaleX(0.24);
     }
 
-    97.2% {
-        opacity: 0.42;
+    96.8% {
+        opacity: 0.48;
     }
 
-    98.2% {
-        opacity: 0.26;
-        transform: translate3d(-18vw, 9vh, 0) rotate(-24deg) scaleX(0.95);
+    98% {
+        opacity: 0.28;
+        transform: translate3d(var(--meteor-mid-x, -18vw), var(--meteor-mid-y, 9vh), 0)
+            rotate(var(--meteor-angle, -24deg)) scaleX(0.98);
     }
 
-    99.1% {
+    99.2% {
         opacity: 0;
-        transform: translate3d(-24vw, 14vh, 0) rotate(-24deg) scaleX(0.65);
+        transform: translate3d(var(--meteor-end-x, -24vw), var(--meteor-end-y, 14vh), 0)
+            rotate(var(--meteor-angle, -24deg)) scaleX(0.62);
     }
 }
 

@@ -11,48 +11,144 @@ export default function GlassText() {
         viewBox="0 0 67 14"
         className="w-full max-w-[860px] h-auto overflow-visible"
         xmlns="http://www.w3.org/2000/svg"
-        initial={{ opacity: 0.92, scale: 0.99 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.4, ease: "easeOut" }}
+        initial={{ opacity: 0.9, scale: 0.985 }}
+        animate={{ opacity: 1, scale: [0.985, 1.01, 0.995] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
       >
         <defs>
           <linearGradient id="neonStroke" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#B6F8E2" />
-            <stop offset="52%" stopColor="#8AECCB" />
-            <stop offset="100%" stopColor="#61D7AC" />
+            <stop offset="0%" stopColor="#6EE7B7" />
+            <stop offset="48%" stopColor="#34D399" />
+            <stop offset="100%" stopColor="#10B981" />
           </linearGradient>
           <linearGradient id="finalFill" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#8DEFD1" />
-            <stop offset="52%" stopColor="#66DDB6" />
-            <stop offset="100%" stopColor="#45C698" />
+            <stop offset="0%" stopColor="#5EF7C3" />
+            <stop offset="42%" stopColor="#31E7A8" />
+            <stop offset="70%" stopColor="#1CD58F" />
+            <stop offset="100%" stopColor="#0EB977" />
           </linearGradient>
+          <linearGradient id="scanBeam" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0)" />
+            <stop offset="45%" stopColor="rgba(210,255,240,0.92)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+          </linearGradient>
+          <radialGradient id="heroHalo" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(16,185,129,0.40)" />
+            <stop offset="35%" stopColor="rgba(16,185,129,0.23)" />
+            <stop offset="100%" stopColor="rgba(16,185,129,0)" />
+          </radialGradient>
+          <filter id="premiumGlow" x="-35%" y="-130%" width="170%" height="360%">
+            <feGaussianBlur stdDeviation="0.18" result="soft" />
+            <feGaussianBlur stdDeviation="0.42" result="wide" />
+            <feMerge>
+              <feMergeNode in="wide" />
+              <feMergeNode in="soft" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
+
+        <motion.circle
+          cx="33.5"
+          cy="7"
+          r="8.5"
+          fill="url(#heroHalo)"
+          initial={{ scale: 0.86, opacity: 0 }}
+          animate={{ scale: [0.86, 1.08, 0.94], opacity: [0, 0.95, 0.58] }}
+          transition={{ duration: 3.8, ease: "easeOut" }}
+          style={{ filter: "blur(0.9px)" }}
+        />
+        <motion.ellipse
+          cx="33.5"
+          cy="7.1"
+          rx="11.2"
+          ry="5.5"
+          fill="none"
+          stroke="rgba(131,255,214,0.24)"
+          strokeWidth="0.05"
+          initial={{ opacity: 0, rotate: 0 }}
+          animate={{ opacity: [0, 0.55, 0.18, 0.5], rotate: [0, 8, -6, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformOrigin: "33.5px 7.1px" }}
+        />
 
         <motion.path
           d={LOGO_PATH}
           fill="none"
           stroke="url(#neonStroke)"
-          strokeWidth={0.18}
+          strokeWidth={0.24}
           strokeLinecap="round"
           strokeLinejoin="round"
-          initial={{ pathLength: 0, opacity: 0.34 }}
+          initial={{ pathLength: 0, opacity: 0.25 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 1.45, ease: [0.35, 0, 0.2, 1] }}
+          transition={{ duration: 6.3, ease: [0.37, 0, 0.2, 1] }}
           style={{
-            filter: "drop-shadow(0 0 4px rgba(136, 235, 197, 0.22))",
+            filter:
+              "drop-shadow(0 0 6px rgba(94, 247, 195, 0.95)) drop-shadow(0 0 14px rgba(16, 185, 129, 0.85)) drop-shadow(0 0 30px rgba(16, 185, 129, 0.5))",
+          }}
+        />
+
+        <motion.path
+          d={LOGO_PATH}
+          fill="url(#finalFill)"
+          stroke="none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0, 0.95, 0.82] }}
+          transition={{ duration: 8.5, times: [0, 0.72, 0.86, 1], ease: "easeOut" }}
+          style={{
+            filter:
+              "drop-shadow(0 0 8px rgba(160,255,229,0.45)) drop-shadow(0 0 24px rgba(16,185,129,0.45))",
           }}
         />
 
         <motion.path
           d={LOGO_PATH}
           fill="none"
-          stroke="url(#finalFill)"
+          stroke="url(#scanBeam)"
+          strokeWidth={0.62}
           strokeLinecap="round"
           strokeLinejoin="round"
-          initial={{ opacity: 0, strokeWidth: 0.14 }}
-          animate={{ opacity: 0.92, strokeWidth: 0.24 }}
-          transition={{ duration: 0.42, delay: 1.02, ease: "easeOut" }}
+          strokeDasharray="2.7 9.2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.95, 0.55, 0.95], strokeDashoffset: [0, -120, -260] }}
+          transition={{ delay: 6.2, duration: 8.6, ease: "linear", repeat: Infinity }}
+          style={{ filter: "url(#premiumGlow)" }}
         />
+
+        <motion.path
+          d={LOGO_PATH}
+          fill="none"
+          stroke="rgba(196,255,237,0.55)"
+          strokeWidth={0.06}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.5, 0.25, 0.5] }}
+          transition={{ delay: 6.1, duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {[8.5, 19.2, 31.4, 49.6, 60.3].map((cx, index) => (
+          <motion.circle
+            key={cx}
+            cx={cx}
+            cy={6.8 + (index % 2 ? 0.6 : -0.3)}
+            r={0.1}
+            fill="rgba(177,255,226,0.85)"
+            initial={{ opacity: 0, scale: 0.2 }}
+            animate={{
+              opacity: [0, 0.9, 0],
+              scale: [0.2, 1.5, 0.35],
+              y: [0, -0.45, -0.9],
+            }}
+            transition={{
+              duration: 2.4,
+              delay: 6.5 + index * 0.28,
+              repeat: Infinity,
+              repeatDelay: 1.3 + index * 0.1,
+              ease: "easeOut",
+            }}
+          />
+        ))}
       </motion.svg>
     </div>
   );
