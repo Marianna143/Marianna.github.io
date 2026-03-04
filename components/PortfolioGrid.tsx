@@ -71,6 +71,9 @@ export default function PortfolioGrid() {
                     <p className="text-emerald-100/50 text-lg uppercase tracking-widest">
                         Работы в разных нишах: от личного бренда до интернет-магазина.
                     </p>
+                    <p className="text-emerald-100/45 text-sm mt-4 max-w-3xl">
+                        Важно: примеры ниже — это шаблоны и демонстрация внешнего вида. Часть ссылок и кнопок в концептах может быть неактивной.
+                    </p>
                 </motion.div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">

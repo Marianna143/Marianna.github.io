@@ -75,6 +75,15 @@ export default function HeroSection() {
                     продажи и доверие к вашему бренду.
                 </motion.p>
 
+                <motion.p
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: 1.35, ease: "easeOut" }}
+                    className="text-sm md:text-base text-emerald-100/60 max-w-3xl mx-auto mb-10 leading-relaxed"
+                >
+                    Выпускница Лицея НИУ ВШЭ «Дизайн», студентка МГТУ им. Баумана.
+                </motion.p>
+
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
