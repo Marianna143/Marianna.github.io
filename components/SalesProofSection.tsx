@@ -47,7 +47,7 @@ export default function SalesProofSection() {
                     </h2>
                     <p className="text-emerald-100/60 max-w-3xl mx-auto">
                         Я соединяю дизайн, структуру и смысл, чтобы клиенту было легко принять решение
-                        и оставить заявку уже на первом посещении.
+                        и оставить заявку при первом посещении.
                     </p>
                 </motion.div>
 
