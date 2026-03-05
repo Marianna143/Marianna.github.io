@@ -108,7 +108,7 @@ export default function MemoryAuthPage() {
 
         {isConfigured === false ? (
           <div className="mb-4 rounded-xl border border-rose-300/40 bg-rose-900/30 p-3 text-sm text-rose-100">
-            Supabase ENV не найден в проде. Добавьте `SUPABASE_URL` + `SUPABASE_ANON_KEY` (или `NEXT_PUBLIC_*`) и `SUPABASE_SERVICE_ROLE_KEY`.
+            Supabase ENV не найден в проде. Добавьте `SUPABASE_URL` + `SUPABASE_ANON_KEY` (или `NEXT_PUBLIC_*`). `SUPABASE_SERVICE_ROLE_KEY` необязателен, но рекомендуется.
           </div>
         ) : null}
 
