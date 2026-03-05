@@ -1644,12 +1644,23 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                       rotation={item.rotation}
                       zIndex={item.zIndex}
                     >
-                      <div
-                        className="grid h-20 w-20 place-items-center rounded-xl border border-amber-200/20 text-4xl shadow-[0_9px_16px_rgba(0,0,0,0.35)]"
-                        style={{ backgroundColor: `${sticker.color}88` }}
-                        title={sticker.name}
-                      >
-                        {sticker.emoji || "✨"}
+                      <div className="grid h-24 w-24 place-items-center" title={sticker.name}>
+                        {sticker.image_url ? (
+                          <img
+                            src={sticker.image_url}
+                            alt={sticker.name}
+                            className="h-20 w-20 object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.48)]"
+                            loading="lazy"
+                            style={{ filter: "saturate(0.84) contrast(1.05)" }}
+                          />
+                        ) : (
+                          <div
+                            className="grid h-20 w-20 place-items-center rounded-xl border border-amber-200/20 text-4xl shadow-[0_9px_16px_rgba(0,0,0,0.35)]"
+                            style={{ backgroundColor: `${sticker.color}88` }}
+                          >
+                            {sticker.emoji || "✨"}
+                          </div>
+                        )}
                       </div>
                     </DraggableCard>
                   );
@@ -1658,28 +1669,46 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
             </DndContext>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {state.stickers.map((sticker) => (
-              <button
-                key={`pin-${sticker.id}`}
-                type="button"
-                onClick={() =>
-                  upsertLocalLayout({
-                    itemType: "sticker",
-                    refId: sticker.id,
-                    x: 60 + Math.round(Math.random() * 500),
-                    y: 760 + Math.round(Math.random() * 240),
-                    rotation: randomTilt(sticker.id),
-                    scale: 1,
-                    zIndex: 250,
-                    pinned: true,
-                  })
-                }
-                className="rounded-md border border-amber-600/50 bg-black/25 px-2 py-1 text-xs hover:bg-amber-500/20"
-              >
-                Приклеить: {sticker.emoji} {sticker.name}
-              </button>
-            ))}
+          <div className="mt-3 rounded-lg border border-amber-700/35 bg-[#1d130f]/65 p-2">
+            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-amber-300/70">
+              Приклеить на доску ({filteredStickers.length})
+            </p>
+            <div className="max-h-32 overflow-y-auto">
+              <div className="flex flex-wrap gap-2">
+                {filteredStickers.map((sticker) => (
+                  <button
+                    key={`pin-${sticker.id}`}
+                    type="button"
+                    onClick={() =>
+                      upsertLocalLayout({
+                        itemType: "sticker",
+                        refId: sticker.id,
+                        x: 60 + Math.round(Math.random() * 500),
+                        y: 760 + Math.round(Math.random() * 240),
+                        rotation: randomTilt(sticker.id),
+                        scale: 1,
+                        zIndex: 250,
+                        pinned: true,
+                      })
+                    }
+                    className="flex items-center gap-1.5 rounded-md border border-amber-600/50 bg-black/25 px-2 py-1 text-xs hover:bg-amber-500/20"
+                  >
+                    {sticker.image_url ? (
+                      <img
+                        src={sticker.image_url}
+                        alt={sticker.name}
+                        className="h-5 w-5 object-contain"
+                        loading="lazy"
+                        style={{ filter: "saturate(0.84) contrast(1.06)" }}
+                      />
+                    ) : (
+                      <span>{sticker.emoji || "✨"}</span>
+                    )}
+                    <span>{sticker.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       </div>
