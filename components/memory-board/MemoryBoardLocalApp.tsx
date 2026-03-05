@@ -63,6 +63,8 @@ type GarlandLine = {
   bulbs: number;
 };
 
+type StickerLayerMode = "over" | "under";
+
 const FALLBACK_STICKER_COLORS = ["#34d399", "#22c55e", "#0ea5e9", "#10b981", "#ec4899"];
 const BOOTH_FRAME_PRESETS = ["#fffdf8", "#fef3c7", "#d1fae5", "#cffafe", "#fee2e2", "#e9d5ff"];
 const GARLAND_LINES: GarlandLine[] = [
@@ -76,6 +78,11 @@ const LOCAL_SESSION_KEY = "memory_local_session";
 const LOCAL_BOARD_STORAGE_PREFIX = "memory-board-local-v2";
 const LEGACY_LOCAL_STORAGE_PREFIX = "memory-board-local-v1";
 const LOCAL_CATEGORY_ID = "local-category-main";
+const STICKER_REF_SEPARATOR = "::";
+const STICKER_LAYER_Z = {
+  under: 22,
+  over: 430,
+} as const;
 
 const BOARD_WIDTH = 3600;
 const BOARD_MIN_HEIGHT = 2600;
@@ -103,6 +110,35 @@ function legacyLocalStorageKey(userId: string, year: number) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+function createStickerLayoutRef(stickerId: string) {
+  return `${stickerId}${STICKER_REF_SEPARATOR}${localId("sticker-instance")}`;
+}
+
+function parseStickerLayoutRef(refId: string) {
+  const separatorIndex = refId.indexOf(STICKER_REF_SEPARATOR);
+
+  if (separatorIndex === -1) {
+    return { stickerId: refId, instanceId: null as string | null };
+  }
+
+  const stickerId = refId.slice(0, separatorIndex);
+  const instanceId = refId.slice(separatorIndex + STICKER_REF_SEPARATOR.length) || null;
+
+  return { stickerId, instanceId };
+}
+
+function parseDragIdentifier(rawId: string) {
+  const divider = rawId.indexOf(":");
+  if (divider === -1) {
+    return null;
+  }
+
+  return {
+    itemType: rawId.slice(0, divider) as LayoutItem["itemType"],
+    refId: rawId.slice(divider + 1),
+  };
 }
 
 function createEmptyLocalState(userId: string, selectedYear: number): MemoryBoardState {
@@ -276,6 +312,57 @@ async function optimizeImageForBoard(file: File) {
   }
 }
 
+async function optimizeStickerAsset(file: File) {
+  const sourceDataUrl = await fileToDataUrl(file);
+
+  if (!file.type.startsWith("image/")) {
+    return {
+      dataUrl: sourceDataUrl,
+      width: null,
+      height: null,
+    };
+  }
+
+  try {
+    const image = await loadImageFromDataUrl(sourceDataUrl);
+    const maxSide = 720;
+    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+
+    const targetWidth = Math.max(1, Math.round(image.width * scale));
+    const targetHeight = Math.max(1, Math.round(image.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const context = canvas.getContext("2d", { alpha: true });
+    if (!context) {
+      return {
+        dataUrl: sourceDataUrl,
+        width: image.width,
+        height: image.height,
+      };
+    }
+
+    context.clearRect(0, 0, targetWidth, targetHeight);
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    const mimeType = file.type === "image/webp" ? "image/webp" : "image/png";
+
+    return {
+      dataUrl: canvas.toDataURL(mimeType, 0.97),
+      width: targetWidth,
+      height: targetHeight,
+    };
+  } catch {
+    return {
+      dataUrl: sourceDataUrl,
+      width: null,
+      height: null,
+    };
+  }
+}
+
 function decodeDataUrl(dataUrl: string) {
   const comma = dataUrl.indexOf(",");
   if (comma === -1) {
@@ -338,6 +425,7 @@ function DraggableCard({ dragId, x, y, rotation, zIndex, children }: DraggableCa
 
 export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: string; userEmail: string }) {
   const boardRef = useRef<HTMLDivElement | null>(null);
+  const stickerImageInputRef = useRef<HTMLInputElement | null>(null);
 
   const [year, setYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
@@ -361,7 +449,9 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
   const [newStickerEmoji, setNewStickerEmoji] = useState("✨");
   const [newStickerColor, setNewStickerColor] = useState(FALLBACK_STICKER_COLORS[0]);
   const [newStickerCategoryId, setNewStickerCategoryId] = useState<string>(LOCAL_CATEGORY_ID);
+  const [stickerLayerMode, setStickerLayerMode] = useState<StickerLayerMode>("over");
   const [creatingSticker, setCreatingSticker] = useState(false);
+  const [importingStickers, setImportingStickers] = useState(false);
 
   const [cassetteTitle, setCassetteTitle] = useState("");
   const [savingCassette, setSavingCassette] = useState(false);
@@ -780,13 +870,17 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     setCreatingSticker(true);
 
     try {
+      const uploadedFile = stickerImageInputRef.current?.files?.[0] ?? null;
+      const optimizedAsset = uploadedFile ? await optimizeStickerAsset(uploadedFile) : null;
+      const imageUrl = optimizedAsset?.dataUrl ?? null;
+
       const nextSticker = {
         id: localId("sticker"),
         user_id: userId,
         name: newStickerName.trim(),
-        emoji: newStickerEmoji || "✨",
-        image_path: null,
-        image_url: null,
+        emoji: imageUrl ? "" : newStickerEmoji || "✨",
+        image_path: imageUrl ? localId("sticker-image") : null,
+        image_url: imageUrl,
         color: newStickerColor,
         category_id: newStickerCategoryId || null,
       };
@@ -797,12 +891,93 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
       });
 
       setNewStickerName("");
+      setNewStickerEmoji("✨");
+
+      if (stickerImageInputRef.current) {
+        stickerImageInputRef.current.value = "";
+      }
     } catch (stickerError) {
       const text = stickerError instanceof Error ? stickerError.message : "Ошибка стикера";
       setError(text);
     } finally {
       setCreatingSticker(false);
     }
+  }
+
+  async function importStickerPack(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!state || !event.target.files?.length) return;
+
+    setImportingStickers(true);
+    setError(null);
+
+    try {
+      const files = Array.from(event.target.files).filter((file) => file.type.startsWith("image/"));
+
+      if (!files.length) {
+        throw new Error("Выберите PNG или WEBP стикеры");
+      }
+
+      const importedStickers = await Promise.all(
+        files.map(async (file, index) => {
+          const optimizedAsset = await optimizeStickerAsset(file);
+          const normalizedName = file.name.replace(/\.[^.]+$/, "").replace(/[\-_]+/g, " ").trim();
+
+          return {
+            id: localId("sticker"),
+            user_id: userId,
+            name: normalizedName || `Sticker ${state.stickers.length + index + 1}`,
+            emoji: "",
+            image_path: localId("sticker-image"),
+            image_url: optimizedAsset.dataUrl,
+            color: "#ffffff",
+            category_id: newStickerCategoryId || null,
+          };
+        }),
+      );
+
+      persistState({
+        ...state,
+        stickers: [...state.stickers, ...importedStickers],
+      });
+    } catch (importError) {
+      const text = importError instanceof Error ? importError.message : "Не удалось импортировать стикеры";
+      setError(text);
+    } finally {
+      setImportingStickers(false);
+      event.target.value = "";
+    }
+  }
+
+  function addStickerToBoard(stickerId: string) {
+    const layerZIndex = stickerLayerMode === "under" ? STICKER_LAYER_Z.under : STICKER_LAYER_Z.over;
+
+    upsertLocalLayout({
+      itemType: "sticker",
+      refId: createStickerLayoutRef(stickerId),
+      x: 80 + Math.round(Math.random() * (boardDimensions.width - 420)),
+      y: Math.round(520 + Math.random() * Math.max(240, boardDimensions.height - 820)),
+      rotation: randomTilt(`${stickerId}-${Date.now()}`),
+      scale: 1,
+      zIndex: layerZIndex,
+      pinned: true,
+    });
+  }
+
+  function removeStickerFromBoard(layoutRefId: string) {
+    const nextItems = layoutItems.filter((item) => !(item.itemType === "sticker" && item.refId === layoutRefId));
+    saveLayout(nextItems);
+  }
+
+  function toggleStickerLayer(layoutRefId: string) {
+    const layoutItem = layoutItems.find((item) => item.itemType === "sticker" && item.refId === layoutRefId);
+    if (!layoutItem) return;
+
+    const nextLayer = layoutItem.zIndex <= STICKER_LAYER_Z.under + 12 ? STICKER_LAYER_Z.over : STICKER_LAYER_Z.under;
+
+    upsertLocalLayout({
+      ...layoutItem,
+      zIndex: nextLayer,
+    });
   }
 
   async function createCassette(event: React.FormEvent<HTMLFormElement>) {
@@ -917,7 +1092,10 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     if (!state || (!event.delta.x && !event.delta.y)) return;
 
     const rawId = String(event.active.id);
-    const [itemType, refId] = rawId.split(":") as [LayoutItem["itemType"], string];
+    const parsedId = parseDragIdentifier(rawId);
+    if (!parsedId) return;
+
+    const { itemType, refId } = parsedId;
     const prev = layoutByKey.get(rawId);
     if (!prev) return;
 
@@ -1199,7 +1377,12 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                           : "border-emerald-700/50 bg-black/25 hover:bg-emerald-500/20"
                       }`}
                     >
-                      {sticker.emoji} {sticker.name}
+                      {sticker.image_url ? (
+                        <img src={sticker.image_url} alt={sticker.name} className="mr-1 inline-block h-5 w-5 object-contain" />
+                      ) : (
+                        <span className="mr-1">{sticker.emoji || "✨"}</span>
+                      )}
+                      {sticker.name}
                     </button>
                   );
                 })}
@@ -1279,6 +1462,17 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                 ))}
               </select>
             </div>
+
+            <label className="block text-xs text-emerald-100/80">
+              Прозрачный стикер (PNG/WEBP)
+              <input
+                ref={stickerImageInputRef}
+                type="file"
+                accept="image/png,image/webp,image/jpeg"
+                className="mt-1 block w-full text-xs"
+              />
+            </label>
+
             <button
               type="button"
               onClick={createSticker}
@@ -1287,6 +1481,19 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
             >
               {creatingSticker ? "Создаю..." : "Создать стикер"}
             </button>
+
+            <label className="block text-xs text-emerald-100/80">
+              Импорт пакета Telegram (несколько PNG/WEBP)
+              <input
+                type="file"
+                accept="image/png,image/webp,image/jpeg"
+                multiple
+                onChange={importStickerPack}
+                className="mt-1 block w-full text-xs"
+              />
+            </label>
+
+            {importingStickers ? <p className="text-xs text-emerald-100/75">Импортирую стикеры...</p> : null}
           </section>
 
           <section className="mt-4 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
@@ -1481,8 +1688,11 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                   {layoutItems
                     .filter((item) => item.itemType === "sticker")
                     .map((item) => {
-                      const sticker = stickersById.get(item.refId);
+                      const parsedRef = parseStickerLayoutRef(item.refId);
+                      const sticker = stickersById.get(parsedRef.stickerId);
                       if (!sticker) return null;
+
+                      const isUnderPhoto = item.zIndex <= STICKER_LAYER_Z.under + 12;
 
                       return (
                         <DraggableCard
@@ -1493,12 +1703,52 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                           rotation={item.rotation}
                           zIndex={item.zIndex}
                         >
-                          <div
-                            className="grid h-20 w-20 place-items-center rounded-xl border border-emerald-200/20 text-4xl shadow-[0_9px_16px_rgba(0,0,0,0.35)]"
-                            style={{ backgroundColor: `${sticker.color}99` }}
-                            title={sticker.name}
-                          >
-                            {sticker.emoji || "✨"}
+                          <div className="group relative">
+                            <button
+                              type="button"
+                              onPointerDown={(event) => event.stopPropagation()}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                toggleStickerLayer(item.refId);
+                              }}
+                              className="absolute -left-2 -top-2 z-30 rounded-full border border-emerald-100/65 bg-emerald-950/80 px-1.5 py-0.5 text-[10px] text-emerald-100 opacity-0 shadow transition group-hover:opacity-100"
+                              title={isUnderPhoto ? "Переместить над фото" : "Переместить под фото"}
+                            >
+                              {isUnderPhoto ? "↓" : "↑"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onPointerDown={(event) => event.stopPropagation()}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                removeStickerFromBoard(item.refId);
+                              }}
+                              className="absolute -right-2 -top-2 z-30 rounded-full border border-rose-200/60 bg-rose-900/80 px-1.5 py-0.5 text-[10px] text-rose-100 opacity-0 shadow transition group-hover:opacity-100"
+                              title="Удалить с доски"
+                            >
+                              ✕
+                            </button>
+
+                            {sticker.image_url ? (
+                              <img
+                                src={sticker.image_url}
+                                alt={sticker.name}
+                                className="h-24 w-24 select-none object-contain"
+                                style={{ filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.35)) drop-shadow(0 8px 8px rgba(0,0,0,0.32))" }}
+                                draggable={false}
+                              />
+                            ) : (
+                              <div
+                                className="grid h-20 w-20 place-items-center rounded-xl border border-emerald-200/20 text-4xl shadow-[0_9px_16px_rgba(0,0,0,0.35)]"
+                                style={{ backgroundColor: `${sticker.color}99` }}
+                                title={sticker.name}
+                              >
+                                {sticker.emoji || "✨"}
+                              </div>
+                            )}
                           </div>
                         </DraggableCard>
                       );
@@ -1530,28 +1780,42 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {state.stickers.map((sticker) => (
+          <div className="mt-3 space-y-2">
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-emerald-700/35 bg-black/25 px-2 py-1.5 text-xs">
+              <span className="text-emerald-200/80">Слой новых стикеров:</span>
               <button
-                key={`pin-${sticker.id}`}
                 type="button"
-                onClick={() =>
-                  upsertLocalLayout({
-                    itemType: "sticker",
-                    refId: sticker.id,
-                    x: 80 + Math.round(Math.random() * (boardDimensions.width - 440)),
-                    y: Math.round(530 + Math.random() * Math.max(240, boardDimensions.height - 860)),
-                    rotation: randomTilt(sticker.id),
-                    scale: 1,
-                    zIndex: 360,
-                    pinned: true,
-                  })
-                }
-                className="rounded-md border border-emerald-600/50 bg-black/25 px-2 py-1 text-xs hover:bg-emerald-500/20"
+                onClick={() => setStickerLayerMode("over")}
+                className={`rounded px-2 py-1 ${stickerLayerMode === "over" ? "bg-emerald-400 text-black" : "border border-emerald-700/50 text-emerald-100/85"}`}
               >
-                Приклеить: {sticker.emoji} {sticker.name}
+                Над фото
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setStickerLayerMode("under")}
+                className={`rounded px-2 py-1 ${stickerLayerMode === "under" ? "bg-emerald-400 text-black" : "border border-emerald-700/50 text-emerald-100/85"}`}
+              >
+                Под фото
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {state.stickers.map((sticker) => (
+                <button
+                  key={`pin-${sticker.id}`}
+                  type="button"
+                  onClick={() => addStickerToBoard(sticker.id)}
+                  className="flex items-center gap-2 rounded-md border border-emerald-600/50 bg-black/25 px-2 py-1 text-xs hover:bg-emerald-500/20"
+                >
+                  {sticker.image_url ? (
+                    <img src={sticker.image_url} alt={sticker.name} className="h-8 w-8 object-contain" />
+                  ) : (
+                    <span className="text-base">{sticker.emoji || "✨"}</span>
+                  )}
+                  <span>{sticker.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
       </div>
