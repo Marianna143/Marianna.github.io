@@ -1,6 +1,8 @@
 const supabaseUrlKeys = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL", "SUPABASE_PROJECT_URL"] as const;
 const supabaseAnonKeyKeys = ["NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"] as const;
 const supabaseServiceRoleKeys = ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY"] as const;
+const memoryLocalOnlyKeys = ["MEMORY_LOCAL_ONLY", "NEXT_PUBLIC_MEMORY_LOCAL_ONLY"] as const;
+const disabledFlagValues = new Set(["0", "false", "off", "no"]);
 
 function readFirstEnv(keys: readonly string[]): string | null {
   for (const key of keys) {
@@ -17,7 +19,21 @@ function formatKeyList(keys: readonly string[]): string {
   return keys.join(" or ");
 }
 
+export function isMemoryLocalOnlyMode() {
+  const rawValue = readFirstEnv(memoryLocalOnlyKeys);
+
+  if (!rawValue) {
+    return true;
+  }
+
+  return !disabledFlagValues.has(rawValue.trim().toLowerCase());
+}
+
 export function tryGetSupabaseClientEnv() {
+  if (isMemoryLocalOnlyMode()) {
+    return null;
+  }
+
   const url = readFirstEnv(supabaseUrlKeys);
   const anonKey = readFirstEnv(supabaseAnonKeyKeys);
 
@@ -35,6 +51,10 @@ export function hasSupabaseClientEnv() {
 export function getSupabaseClientEnv() {
   const env = tryGetSupabaseClientEnv();
   if (!env) {
+    if (isMemoryLocalOnlyMode()) {
+      throw new Error("Memory board runs in local-only mode");
+    }
+
     throw new Error(
       `Missing environment variables: ${formatKeyList(supabaseUrlKeys)} and ${formatKeyList(supabaseAnonKeyKeys)}`,
     );
@@ -44,10 +64,18 @@ export function getSupabaseClientEnv() {
 }
 
 export function hasSupabaseServiceRoleEnv() {
+  if (isMemoryLocalOnlyMode()) {
+    return false;
+  }
+
   return Boolean(readFirstEnv(supabaseServiceRoleKeys));
 }
 
 export function tryGetSupabaseServiceEnv() {
+  if (isMemoryLocalOnlyMode()) {
+    return null;
+  }
+
   const clientEnv = tryGetSupabaseClientEnv();
   const serviceRoleKey = readFirstEnv(supabaseServiceRoleKeys);
 
@@ -64,6 +92,10 @@ export function tryGetSupabaseServiceEnv() {
 export function getSupabaseServiceEnv() {
   const env = tryGetSupabaseServiceEnv();
   if (!env) {
+    if (isMemoryLocalOnlyMode()) {
+      throw new Error("Memory board runs in local-only mode");
+    }
+
     throw new Error(`Missing environment variable: ${formatKeyList(supabaseServiceRoleKeys)}`);
   }
 

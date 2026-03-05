@@ -259,7 +259,7 @@ export default function MemoryAuthPage() {
 
         {isConfigured === false ? (
           <div className="mb-4 rounded-xl border border-emerald-300/40 bg-emerald-900/30 p-3 text-sm text-emerald-100">
-            Supabase ENV пока не найден в проде. Включен локальный режим: вход и данные работают на этом устройстве.
+            Локальный режим включен: данные хранятся только на этом ноутбуке (в браузере).
           </div>
         ) : null}
 
