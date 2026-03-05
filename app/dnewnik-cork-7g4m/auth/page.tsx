@@ -3,6 +3,83 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type LocalAccount = {
+  userId: string;
+  email: string;
+  password: string;
+  displayName: string;
+  createdAt: string;
+};
+
+type LocalSession = {
+  userId: string;
+  email: string;
+  displayName?: string;
+};
+
+const LOCAL_ACCOUNTS_KEY = "memory_local_accounts_v1";
+const LOCAL_SESSION_KEY = "memory_local_session";
+const LOCAL_SESSION_COOKIE_KEY = "memory_local_session";
+const SESSION_MAX_AGE = 60 * 60 * 24 * 365;
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function createLocalId(prefix: string) {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
+}
+
+function readLocalAccounts() {
+  const raw = localStorage.getItem(LOCAL_ACCOUNTS_KEY);
+  if (!raw) {
+    return [] as LocalAccount[];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as LocalAccount[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter((item) => Boolean(item?.userId && item?.email && item?.password));
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalAccounts(accounts: LocalAccount[]) {
+  localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
+function writeLocalSession(session: LocalSession) {
+  localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(session));
+  const encoded = encodeURIComponent(JSON.stringify(session));
+  document.cookie = `${LOCAL_SESSION_COOKIE_KEY}=${encoded}; Path=/; Max-Age=${SESSION_MAX_AGE}; SameSite=Lax`;
+}
+
+function readLocalSession() {
+  const raw = localStorage.getItem(LOCAL_SESSION_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as LocalSession;
+    if (!parsed?.userId || !parsed?.email) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export default function MemoryAuthPage() {
   const router = useRouter();
 
@@ -46,19 +123,93 @@ export default function MemoryAuthPage() {
     };
   }, []);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (isConfigured === false) {
-      setError("Supabase пока не подключен на проде. Нужны env-переменные в Vercel.");
+  useEffect(() => {
+    if (isConfigured !== false) {
       return;
     }
+
+    const session = readLocalSession();
+    if (!session) {
+      return;
+    }
+
+    router.replace(nextPath);
+    router.refresh();
+  }, [isConfigured, nextPath, router]);
+
+  async function handleLocalAuth() {
+    const normalizedEmail = normalizeEmail(email);
+    const trimmedName = displayName.trim();
+
+    if (!normalizedEmail || !password) {
+      throw new Error("Email и пароль обязательны");
+    }
+
+    const accounts = readLocalAccounts();
+
+    if (mode === "sign-in") {
+      const account = accounts.find((item) => normalizeEmail(item.email) === normalizedEmail);
+
+      if (!account || account.password !== password) {
+        throw new Error("Неверный email или пароль");
+      }
+
+      writeLocalSession({
+        userId: account.userId,
+        email: account.email,
+        displayName: account.displayName,
+      });
+
+      router.push(nextPath);
+      router.refresh();
+      return;
+    }
+
+    if (password.length < 6) {
+      throw new Error("Пароль должен быть минимум 6 символов");
+    }
+
+    const exists = accounts.some((item) => normalizeEmail(item.email) === normalizedEmail);
+    if (exists) {
+      throw new Error("Аккаунт с таким email уже существует");
+    }
+
+    const newAccount: LocalAccount = {
+      userId: createLocalId("local-user"),
+      email: normalizedEmail,
+      password,
+      displayName: trimmedName,
+      createdAt: new Date().toISOString(),
+    };
+
+    writeLocalAccounts([...accounts, newAccount]);
+    writeLocalSession({
+      userId: newAccount.userId,
+      email: newAccount.email,
+      displayName: newAccount.displayName,
+    });
+
+    router.push(nextPath);
+    router.refresh();
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
     setLoading(true);
     setError(null);
     setMessage(null);
 
     try {
+      if (isConfigured === false) {
+        await handleLocalAuth();
+        return;
+      }
+
+      if (isConfigured !== true) {
+        throw new Error("Проверяем конфигурацию. Повторите через пару секунд.");
+      }
+
       const endpoint = mode === "sign-in" ? "/api/memory-auth/sign-in" : "/api/memory-auth/sign-up";
 
       const response = await fetch(endpoint, {
@@ -96,7 +247,7 @@ export default function MemoryAuthPage() {
     }
   }
 
-  const submitDisabled = loading || isConfigured === false;
+  const submitDisabled = loading || isConfigured === null;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#02130f] px-6 py-10 text-emerald-50">
@@ -107,8 +258,8 @@ export default function MemoryAuthPage() {
         <h1 className="mb-6 text-3xl font-semibold text-emerald-50">Дневник Воспоминаний</h1>
 
         {isConfigured === false ? (
-          <div className="mb-4 rounded-xl border border-rose-300/40 bg-rose-900/30 p-3 text-sm text-rose-100">
-            Supabase ENV не найден в проде. Добавьте `SUPABASE_URL` + `SUPABASE_ANON_KEY` (или `NEXT_PUBLIC_*`). `SUPABASE_SERVICE_ROLE_KEY` необязателен, но рекомендуется.
+          <div className="mb-4 rounded-xl border border-emerald-300/40 bg-emerald-900/30 p-3 text-sm text-emerald-100">
+            Supabase ENV пока не найден в проде. Включен локальный режим: вход и данные работают на этом устройстве.
           </div>
         ) : null}
 
