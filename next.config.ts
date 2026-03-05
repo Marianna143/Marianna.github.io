@@ -2,18 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
-    // Игнорировать ошибки TypeScript при сборке
+    // В этом проекте сборка не блокируется типовыми ошибками.
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    // Игнорировать ошибки оформления (Lint) при сборке
-    ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
     ],
   },

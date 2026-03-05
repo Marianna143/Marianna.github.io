@@ -22,6 +22,7 @@ export default function Footer() {
                     <a href="#projects" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Кейсы</a>
                     <a href="#pricing" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Цены</a>
                     <a href="#contact" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Заявка</a>
+                    <a href="/dnewnik" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Проект</a>
                     <a href="https://t.me/workvinil" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Телеграм</a>
                 </div>
 
