@@ -30,6 +30,10 @@ const playfairDisplay = Playfair_Display({
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://marianna-web.ru"),
+    alternates: {
+        canonical: "/",
+    },
+    applicationName: "Марианна — разработка сайтов",
     title: {
         default: "Марианна | Разработка сайтов: Тильда, Таплинк, интернет-магазины",
         template: "%s | Марианна — разработка сайтов",
@@ -48,6 +52,11 @@ export const metadata: Metadata = {
     ],
     authors: [{ name: "Марианна", url: "https://marianna-web.ru" }],
     creator: "Марианна",
+    formatDetection: {
+        email: false,
+        address: false,
+        telephone: false,
+    },
     openGraph: {
         title: "Марианна | Сайты, которые продают",
         description:
@@ -64,6 +73,13 @@ export const metadata: Metadata = {
         ],
         locale: "ru_RU",
         type: "website",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Марианна | Сайты, которые продают",
+        description:
+            "Разработка интернет-магазинов, лендингов и сайтов на коде с акцентом на продажи и конверсию.",
+        images: ["/og-image.jpg"],
     },
     robots: {
         index: true,

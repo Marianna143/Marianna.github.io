@@ -21,6 +21,7 @@ export default function Footer() {
                 <div className="flex gap-8 mb-10">
                     <a href="#projects" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Кейсы</a>
                     <a href="#pricing" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Цены</a>
+                    <a href="/poleznoe" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Полезное</a>
                     <a href="#contact" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Заявка</a>
                     <a href="https://t.me/workvinil" className="text-emerald-100/40 hover:text-emerald-500 transition-colors text-sm uppercase tracking-widest">Телеграм</a>
                 </div>
