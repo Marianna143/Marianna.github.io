@@ -8,12 +8,25 @@ function readEnv(key: string): string {
   return value;
 }
 
+export function tryGetSupabaseClientEnv() {
+  const [urlKey, anonKeyKey] = requiredClientKeys;
+  const url = process.env[urlKey];
+  const anonKey = process.env[anonKeyKey];
+
+  if (!url || !anonKey) {
+    return null;
+  }
+
+  return { url, anonKey };
+}
+
 export function getSupabaseClientEnv() {
-  const [urlKey, anonKey] = requiredClientKeys;
-  return {
-    url: readEnv(urlKey),
-    anonKey: readEnv(anonKey),
-  };
+  const env = tryGetSupabaseClientEnv();
+  if (!env) {
+    throw new Error("Missing environment variables: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  }
+
+  return env;
 }
 
 export function getSupabaseServiceEnv() {

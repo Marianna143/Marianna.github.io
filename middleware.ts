@@ -5,8 +5,18 @@ const HIDDEN_ROUTE = "/dnewnik-cork-7g4m";
 const AUTH_ROUTE = "/dnewnik-cork-7g4m/auth";
 
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSupabaseSession(request);
+  const { response, user, isConfigured } = await updateSupabaseSession(request);
   const { pathname } = request.nextUrl;
+
+  if (!isConfigured) {
+    if (pathname.startsWith(HIDDEN_ROUTE) && !pathname.startsWith(AUTH_ROUTE)) {
+      const url = new URL(AUTH_ROUTE, request.url);
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
+
+    return response;
+  }
 
   if (pathname.startsWith(AUTH_ROUTE) && user) {
     return NextResponse.redirect(new URL(HIDDEN_ROUTE, request.url));
@@ -22,5 +32,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dnewnik-cork-7g4m/:path*"],
+  matcher: ["/dnewnik-cork-7g4m/:path*", "/dnewnik/:path*"],
 };

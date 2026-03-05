@@ -16,6 +16,10 @@ export default function MemoryAuthPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const isSupabaseConfigured =
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
@@ -26,6 +30,12 @@ export default function MemoryAuthPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!isSupabaseConfigured) {
+      setError("Supabase ENV не настроен на проде. Добавьте переменные в Vercel Project Settings → Environment Variables.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -68,6 +78,12 @@ export default function MemoryAuthPage() {
       <div className="mx-auto max-w-md rounded-3xl border border-amber-700/30 bg-black/35 p-7 backdrop-blur-sm">
         <p className="mb-2 text-sm uppercase tracking-[0.3em] text-amber-300/70">Секретная страница</p>
         <h1 className="mb-6 text-3xl font-semibold text-amber-100">Дневник Воспоминаний</h1>
+
+        {!isSupabaseConfigured ? (
+          <div className="mb-4 rounded-xl border border-rose-400/40 bg-rose-900/25 p-3 text-sm text-rose-200">
+            Supabase ENV пока не настроен на проде.
+          </div>
+        ) : null}
 
         <div className="mb-6 flex gap-2 rounded-xl border border-amber-700/40 bg-[#1d130d] p-1">
           <button
@@ -130,7 +146,7 @@ export default function MemoryAuthPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isSupabaseConfigured}
             className="w-full rounded-xl bg-amber-500 px-4 py-2.5 font-medium text-black transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Подождите..." : mode === "sign-in" ? "Войти" : "Создать аккаунт"}
