@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { assertBoardOwnership, getAuthenticatedUser, getServiceClient } from "@/lib/memory-board/server";
 
 const MAX_AUDIO_SIZE = 30 * 1024 * 1024;
+const AUDIO_EXTENSIONS = new Set(["mp3", "m4a", "aac", "wav", "flac", "ogg", "oga", "opus", "mp4", "webm"]);
 
 function guessExtension(fileName: string) {
   const dot = fileName.lastIndexOf(".");
@@ -28,7 +29,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "File is required" }, { status: 400 });
   }
 
-  if (!file.type.startsWith("audio/")) {
+  const ext = guessExtension(file.name);
+  const isAudioByType = file.type.startsWith("audio/");
+  const isAudioByExt = AUDIO_EXTENSIONS.has(ext);
+
+  if (!isAudioByType && !isAudioByExt) {
     return NextResponse.json({ error: "Нужен аудиофайл" }, { status: 400 });
   }
 
@@ -39,14 +44,13 @@ export async function POST(request: Request) {
   try {
     await assertBoardOwnership(boardId, user);
 
-    const ext = guessExtension(file.name);
     const storagePath = `${user.id}/${Date.now()}-${randomUUID()}.${ext}`;
 
     const service = getServiceClient();
     const { error: uploadError } = await service.storage
       .from("memory-audio")
       .upload(storagePath, Buffer.from(await file.arrayBuffer()), {
-        contentType: file.type || "audio/mpeg",
+        contentType: isAudioByType ? file.type : "audio/mpeg",
         upsert: false,
       });
 

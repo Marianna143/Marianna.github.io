@@ -43,7 +43,18 @@ ENV-переменные:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+MEMORY_ALLOWED_EMAILS=
 ```
+
+`MEMORY_ALLOWED_EMAILS` (опционально) - список email через запятую для приватного режима.
+
+Пример:
+
+```bash
+MEMORY_ALLOWED_EMAILS=you@example.com,second@example.com
+```
+
+Если переменная пустая, регистрация и вход доступны всем.
 
 ## Локальный запуск
 

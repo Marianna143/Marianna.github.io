@@ -6,6 +6,7 @@ type RequestBody = {
   title: string;
   audioPath: string;
   durationSec?: number | null;
+  coverPath?: string | null;
   x?: number;
   y?: number;
   rotation?: number;
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
         title: body.title.trim(),
         audio_path: body.audioPath,
         duration_sec: body.durationSec ?? null,
+        cover_path: body.coverPath ?? null,
         x: body.x ?? 90 + count * 130,
         y: body.y ?? 980,
         rotation: body.rotation ?? 0,

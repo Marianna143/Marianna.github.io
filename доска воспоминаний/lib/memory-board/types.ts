@@ -99,8 +99,10 @@ export type Cassette = {
   title: string;
   audio_path: string;
   audio_url: string;
+  source_kind: "upload" | "link";
   duration_sec: number | null;
   cover_path: string | null;
+  cover_url: string | null;
   x: number;
   y: number;
   rotation: number;

@@ -58,6 +58,28 @@ type DraggableCardProps = {
 };
 
 const FALLBACK_STICKER_COLORS = ["#f59e0b", "#22c55e", "#0ea5e9", "#f97316", "#ec4899"];
+const VINYL_SOURCES = {
+  upload: "upload",
+  apple: "apple",
+} as const;
+
+type VinylSource = (typeof VINYL_SOURCES)[keyof typeof VINYL_SOURCES];
+
+type AppleResolvedTrack = {
+  title: string;
+  previewUrl: string;
+  artworkUrl: string | null;
+  durationSec: number | null;
+  sourceUrl: string;
+  embedUrl: string;
+};
+
+function formatDuration(seconds: number | null) {
+  if (!seconds || seconds < 0) return "00:00";
+  const min = Math.floor(seconds / 60);
+  const sec = Math.floor(seconds % 60);
+  return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
 
 function DraggableCard({ dragId, x, y, rotation, zIndex, children }: DraggableCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: dragId });
@@ -106,7 +128,16 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
   const [creatingSticker, setCreatingSticker] = useState(false);
 
   const [cassetteTitle, setCassetteTitle] = useState("");
+  const [cassetteSource, setCassetteSource] = useState<VinylSource>(VINYL_SOURCES.upload);
+  const [appleMusicUrl, setAppleMusicUrl] = useState("");
   const [savingCassette, setSavingCassette] = useState(false);
+  const [activeCassetteId, setActiveCassetteId] = useState<string | null>(null);
+  const [isPlayingCassette, setIsPlayingCassette] = useState(false);
+  const [isCassetteBuffering, setIsCassetteBuffering] = useState(false);
+  const [trackProgressRatio, setTrackProgressRatio] = useState(0);
+  const [deckAnimationCounter, setDeckAnimationCounter] = useState(0);
+  const [masterVolume, setMasterVolume] = useState(82);
+  const [speakerVolume, setSpeakerVolume] = useState(86);
 
   const [layoutItems, setLayoutItems] = useState<LayoutItem[]>([]);
   const [savingLayout, setSavingLayout] = useState(false);
@@ -115,6 +146,9 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
   const [modalPhotoIndex, setModalPhotoIndex] = useState(0);
 
   const [exporting, setExporting] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const queuedAutoPlayRef = useRef(false);
+  const newlyCreatedCassetteIdRef = useRef<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -212,6 +246,126 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
 
     return map;
   }, [cards, layoutItems, state]);
+
+  const activeCassette = useMemo(() => {
+    if (!state || !activeCassetteId) return null;
+    return state.cassettes.find((cassette) => cassette.id === activeCassetteId) ?? null;
+  }, [activeCassetteId, state]);
+
+  const cueCassette = useCallback((cassetteId: string, autoPlay = false) => {
+    queuedAutoPlayRef.current = autoPlay;
+    setDeckAnimationCounter((prev) => prev + 1);
+    setActiveCassetteId(cassetteId);
+  }, []);
+
+  useEffect(() => {
+    if (!state?.cassettes.length) {
+      setActiveCassetteId(null);
+      return;
+    }
+
+    if (!activeCassetteId || !state.cassettes.some((cassette) => cassette.id === activeCassetteId)) {
+      setActiveCassetteId(state.cassettes[state.cassettes.length - 1].id);
+    }
+  }, [activeCassetteId, state]);
+
+  useEffect(() => {
+    if (!state || !newlyCreatedCassetteIdRef.current) return;
+    const targetId = newlyCreatedCassetteIdRef.current;
+
+    if (!state.cassettes.some((cassette) => cassette.id === targetId)) {
+      return;
+    }
+
+    newlyCreatedCassetteIdRef.current = null;
+    cueCassette(targetId, true);
+  }, [cueCassette, state]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (!activeCassette) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+      setTrackProgressRatio(0);
+      setIsPlayingCassette(false);
+      return;
+    }
+
+    const shouldLoadNewTrack = audio.getAttribute("src") !== activeCassette.audio_url;
+    if (shouldLoadNewTrack) {
+      audio.pause();
+      audio.src = activeCassette.audio_url;
+      audio.currentTime = 0;
+      audio.load();
+      setTrackProgressRatio(0);
+      setIsPlayingCassette(false);
+    }
+
+    if (queuedAutoPlayRef.current) {
+      queuedAutoPlayRef.current = false;
+      void audio.play().catch(() => {
+        setError("Автовоспроизведение заблокировано браузером. Нажмите Play на проигрывателе.");
+      });
+    }
+  }, [activeCassette]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const volume = Math.min(1, Math.max(0, (masterVolume / 100) * (speakerVolume / 100)));
+    audio.volume = volume;
+  }, [masterVolume, speakerVolume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onPlay = () => {
+      setIsPlayingCassette(true);
+      setIsCassetteBuffering(false);
+    };
+    const onPause = () => {
+      setIsPlayingCassette(false);
+      setIsCassetteBuffering(false);
+    };
+    const onWaiting = () => {
+      setIsCassetteBuffering(true);
+    };
+    const onCanPlay = () => {
+      setIsCassetteBuffering(false);
+    };
+    const onEnded = () => {
+      setIsPlayingCassette(false);
+      setTrackProgressRatio(0);
+    };
+    const onTimeUpdate = () => {
+      if (!audio.duration || Number.isNaN(audio.duration)) {
+        setTrackProgressRatio(0);
+        return;
+      }
+      setTrackProgressRatio(Math.min(1, audio.currentTime / audio.duration));
+    };
+
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("canplay", onCanPlay);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+
+    return () => {
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("canplay", onCanPlay);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+    };
+  }, []);
 
   async function uploadPhoto(file: File): Promise<PendingPhoto> {
     if (!state) {
@@ -418,38 +572,102 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
     return payload;
   }
 
+  async function resolveAppleMusicTrack(sourceUrl: string): Promise<AppleResolvedTrack> {
+    const response = await fetch("/api/audio/apple-resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sourceUrl }),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | ({
+          error?: string;
+        } & Partial<AppleResolvedTrack>)
+      | null;
+
+    if (!response.ok || !payload?.previewUrl || !payload.title) {
+      throw new Error(payload?.error || "Не удалось обработать ссылку Apple Music");
+    }
+
+    return {
+      title: payload.title,
+      previewUrl: payload.previewUrl,
+      artworkUrl: payload.artworkUrl ?? null,
+      durationSec: payload.durationSec ?? null,
+      sourceUrl: payload.sourceUrl ?? sourceUrl,
+      embedUrl: payload.embedUrl ?? sourceUrl,
+    };
+  }
+
   async function createCassette(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!state) return;
 
-    const input = event.currentTarget.elements.namedItem("audio") as HTMLInputElement | null;
-    const file = input?.files?.[0];
-    if (!file || !cassetteTitle.trim()) return;
-
     setSavingCassette(true);
+    setError(null);
 
     try {
-      const uploaded = await uploadCassetteAudio(file);
+      const input = event.currentTarget.elements.namedItem("audio") as HTMLInputElement | null;
+      let title = cassetteTitle.trim();
+      let audioPath = "";
+      let durationSec: number | null = null;
+      let coverPath: string | null = null;
+
+      if (cassetteSource === VINYL_SOURCES.upload) {
+        const file = input?.files?.[0];
+        if (!file) {
+          throw new Error("Выберите аудиофайл");
+        }
+
+        const uploaded = await uploadCassetteAudio(file);
+        audioPath = uploaded.storagePath;
+        durationSec = uploaded.durationSec;
+
+        if (!title) {
+          title = file.name.replace(/\.[^/.]+$/, "").trim();
+        }
+      } else {
+        if (!appleMusicUrl.trim()) {
+          throw new Error("Вставьте ссылку Apple Music");
+        }
+
+        const appleTrack = await resolveAppleMusicTrack(appleMusicUrl.trim());
+        audioPath = appleTrack.previewUrl;
+        durationSec = appleTrack.durationSec;
+        coverPath = appleTrack.artworkUrl;
+
+        if (!title) {
+          title = appleTrack.title;
+        }
+      }
+
+      if (!title) {
+        throw new Error("Введите название трека");
+      }
+
       const response = await fetch("/api/cassettes/upsert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           boardId: state.board.id,
-          title: cassetteTitle,
-          audioPath: uploaded.storagePath,
-          durationSec: uploaded.durationSec,
+          title,
+          audioPath,
+          durationSec,
+          coverPath,
           x: 120,
           y: 980,
-          rotation: randomTilt(cassetteTitle),
+          rotation: randomTilt(title),
         }),
       });
 
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: string; id?: string } | null;
+      if (!response.ok || !payload?.id) {
         throw new Error(payload?.error || "Не удалось создать кассету");
       }
 
+      newlyCreatedCassetteIdRef.current = payload.id;
       setCassetteTitle("");
+      setAppleMusicUrl("");
       if (input) input.value = "";
       await fetchState(year);
     } catch (cassetteError) {
@@ -458,6 +676,49 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
     } finally {
       setSavingCassette(false);
     }
+  }
+
+  async function toggleCassettePlayback() {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (!activeCassetteId) {
+      if (state?.cassettes.length) {
+        cueCassette(state.cassettes[0].id, true);
+      }
+      return;
+    }
+
+    try {
+      if (audio.paused) {
+        setIsCassetteBuffering(true);
+        await audio.play();
+      } else {
+        audio.pause();
+      }
+    } catch {
+      setError("Браузер заблокировал воспроизведение. Нажмите Play ещё раз.");
+    } finally {
+      setIsCassetteBuffering(false);
+    }
+  }
+
+  function switchCassette(offset: -1 | 1) {
+    if (!state?.cassettes.length) return;
+
+    if (!activeCassetteId) {
+      cueCassette(state.cassettes[0].id, true);
+      return;
+    }
+
+    const currentIndex = state.cassettes.findIndex((item) => item.id === activeCassetteId);
+    if (currentIndex === -1) {
+      cueCassette(state.cassettes[0].id, true);
+      return;
+    }
+
+    const nextIndex = (currentIndex + offset + state.cassettes.length) % state.cassettes.length;
+    cueCassette(state.cassettes[nextIndex].id, true);
   }
 
   async function saveLayout(nextItems: LayoutItem[]) {
@@ -806,23 +1067,217 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
           </section>
 
           <section className="mt-4 rounded-xl border border-amber-700/30 bg-black/20 p-3">
-            <h2 className="mb-2 text-base font-semibold text-amber-100">Кассета</h2>
-            <form onSubmit={createCassette} className="space-y-2">
+            <h2 className="text-base font-semibold text-amber-100">Виниловый проигрыватель</h2>
+            <p className="mt-1 text-xs text-amber-200/75">
+              Импорт трека: загрузка файла или ссылка Apple Music (играет preview от Apple).
+            </p>
+
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setCassetteSource(VINYL_SOURCES.upload)}
+                className={`rounded-md border px-2 py-1.5 ${
+                  cassetteSource === VINYL_SOURCES.upload
+                    ? "border-amber-300 bg-amber-500/25 text-amber-100"
+                    : "border-amber-700/50 bg-black/25 text-amber-200/80 hover:bg-amber-500/15"
+                }`}
+              >
+                Файл
+              </button>
+              <button
+                type="button"
+                onClick={() => setCassetteSource(VINYL_SOURCES.apple)}
+                className={`rounded-md border px-2 py-1.5 ${
+                  cassetteSource === VINYL_SOURCES.apple
+                    ? "border-amber-300 bg-amber-500/25 text-amber-100"
+                    : "border-amber-700/50 bg-black/25 text-amber-200/80 hover:bg-amber-500/15"
+                }`}
+              >
+                Apple Music
+              </button>
+            </div>
+
+            <form onSubmit={createCassette} className="mt-2 space-y-2">
               <input
                 value={cassetteTitle}
                 onChange={(event) => setCassetteTitle(event.target.value)}
-                placeholder="Название трека"
+                placeholder="Название трека (можно оставить пустым)"
                 className="w-full rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-sm"
               />
-              <input name="audio" type="file" accept="audio/*" className="w-full text-xs" />
+
+              {cassetteSource === VINYL_SOURCES.upload ? (
+                <input name="audio" type="file" accept="audio/*" className="w-full text-xs" />
+              ) : (
+                <input
+                  value={appleMusicUrl}
+                  onChange={(event) => setAppleMusicUrl(event.target.value)}
+                  placeholder="https://music.apple.com/..."
+                  className="w-full rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-xs"
+                />
+              )}
+
               <button
                 type="submit"
                 disabled={savingCassette}
                 className="w-full rounded-md border border-amber-500/50 px-2 py-1.5 text-sm hover:bg-amber-500/20 disabled:opacity-60"
               >
-                {savingCassette ? "Загружаю..." : "Добавить кассету"}
+                {savingCassette ? "Добавляю трек..." : "Создать пластинку"}
               </button>
             </form>
+
+            <div className="mt-4 rounded-xl border border-amber-700/40 bg-[#120c08]/70 p-3">
+              <div className="relative mx-auto h-56 w-full max-w-[290px] rounded-[22px] border border-amber-900/40 bg-gradient-to-b from-[#d7ac74] via-[#c08b5e] to-[#7b4e2e] shadow-[0_20px_35px_rgba(0,0,0,0.45)]">
+                <div className="absolute left-1/2 top-5 h-[175px] w-[175px] -translate-x-1/2 rounded-full border border-black/50 bg-[#1e2f3f] shadow-[inset_0_0_0_7px_rgba(0,0,0,0.45),inset_0_0_0_14px_rgba(18,29,42,0.45)]" />
+
+                {activeCassette ? (
+                  <div
+                    key={`${activeCassette.id}-${deckAnimationCounter}`}
+                    className="absolute left-1/2 top-5 h-[175px] w-[175px] -translate-x-1/2 rounded-full border border-black/50 bg-[radial-gradient(circle_at_center,#0c1523_0_14%,#12263b_15%_29%,#0b1521_30%_100%)] shadow-[0_9px_18px_rgba(0,0,0,0.45)]"
+                    style={{
+                      animation: isPlayingCassette
+                        ? "vinylDrop 520ms ease-out, recordSpin 2.5s linear infinite 520ms"
+                        : "vinylDrop 520ms ease-out",
+                    }}
+                  >
+                    <div className="absolute left-1/2 top-1/2 h-[58px] w-[58px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-200/40 bg-gradient-to-b from-[#f8edcf] to-[#c8b288]">
+                      {activeCassette.cover_url ? (
+                        <img
+                          src={activeCassette.cover_url}
+                          alt={activeCassette.title}
+                          className="h-full w-full rounded-full object-cover opacity-90"
+                        />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-[10px] text-amber-900">VINYL</div>
+                      )}
+                    </div>
+                    <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2a1c14]" />
+                  </div>
+                ) : (
+                  <div className="absolute left-1/2 top-[94px] -translate-x-1/2 text-xs tracking-[0.14em] text-amber-100/60">
+                    Пластинка не выбрана
+                  </div>
+                )}
+
+                <div
+                  className="absolute right-[34px] top-5 h-[120px] w-[9px] origin-top rounded-full bg-gradient-to-b from-zinc-100 to-zinc-400 shadow-[0_2px_5px_rgba(0,0,0,0.35)] transition-transform duration-500"
+                  style={{
+                    transform: activeCassette ? `rotate(${isPlayingCassette ? 24 : 4}deg)` : "rotate(-20deg)",
+                  }}
+                >
+                  <div className="absolute -bottom-2 -left-[11px] h-3 w-8 rounded-sm bg-zinc-900" />
+                </div>
+                <div className="absolute bottom-3 right-4 h-10 w-10 rounded-full border border-black/40 bg-gradient-to-br from-[#2f2f35] to-black shadow-inner" />
+              </div>
+
+              <div className="mt-3">
+                <p className="truncate text-sm font-semibold text-amber-100">
+                  {activeCassette ? activeCassette.title : "Выберите трек из списка"}
+                </p>
+                <p className="mt-0.5 text-xs text-amber-200/75">
+                  {isCassetteBuffering
+                    ? "Буферизация..."
+                    : isPlayingCassette
+                      ? "Сейчас играет"
+                      : activeCassette
+                        ? "Пауза"
+                        : "Ожидание"}
+                  {activeCassette ? ` · ${formatDuration(activeCassette.duration_sec)}` : ""}
+                </p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/35">
+                  <div
+                    className="h-full rounded-full bg-amber-300 transition-[width] duration-200"
+                    style={{ width: `${Math.round(trackProgressRatio * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => switchCassette(-1)}
+                  className="rounded-md border border-amber-700/50 bg-black/25 px-2 py-2 hover:bg-amber-500/15"
+                >
+                  Назад
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleCassettePlayback}
+                  className="rounded-md border border-amber-300/60 bg-amber-500/20 px-2 py-2 font-semibold text-amber-100 hover:bg-amber-500/30"
+                >
+                  {isPlayingCassette ? "Пауза" : "Play"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchCassette(1)}
+                  className="rounded-md border border-amber-700/50 bg-black/25 px-2 py-2 hover:bg-amber-500/15"
+                >
+                  Вперёд
+                </button>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <label className="text-[11px] uppercase tracking-[0.18em] text-amber-200/70">
+                  Master
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={masterVolume}
+                    onChange={(event) => setMasterVolume(Number(event.target.value))}
+                    className="mt-1 w-full accent-amber-400"
+                  />
+                  <span className="text-[10px] text-amber-100/70">{masterVolume}%</span>
+                </label>
+                <label className="text-[11px] uppercase tracking-[0.18em] text-amber-200/70">
+                  Speaker
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={speakerVolume}
+                    onChange={(event) => setSpeakerVolume(Number(event.target.value))}
+                    className="mt-1 w-full accent-amber-400"
+                  />
+                  <span className="text-[10px] text-amber-100/70">{speakerVolume}%</span>
+                </label>
+              </div>
+
+              <audio ref={audioRef} preload="metadata" className="hidden" />
+            </div>
+
+            <div className="mt-3 max-h-48 space-y-2 overflow-y-auto pr-1">
+              {[...state.cassettes].reverse().map((cassette) => {
+                const isActive = cassette.id === activeCassetteId;
+                return (
+                  <button
+                    key={cassette.id}
+                    type="button"
+                    onClick={() => cueCassette(cassette.id, true)}
+                    className={`flex w-full items-center justify-between rounded-md border px-2 py-2 text-left ${
+                      isActive
+                        ? "border-amber-300/60 bg-amber-500/20"
+                        : "border-amber-700/40 bg-black/25 hover:bg-amber-500/10"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-amber-100">{cassette.title}</span>
+                      <span className="text-[10px] uppercase tracking-[0.16em] text-amber-300/70">
+                        {cassette.source_kind === "link" ? "Apple link" : "Файл"} · {formatDuration(cassette.duration_sec)}
+                      </span>
+                    </span>
+                    <span className="ml-2 text-[10px] uppercase tracking-[0.2em] text-amber-200/70">
+                      {isActive && isPlayingCassette ? "Играет" : "Поставить"}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {!state.cassettes.length ? (
+                <p className="rounded-md border border-dashed border-amber-700/40 px-2 py-2 text-xs text-amber-200/70">
+                  Добавьте первый трек, и пластинка появится в проигрывателе.
+                </p>
+              ) : null}
+            </div>
           </section>
 
           <section className="mt-4 rounded-xl border border-amber-700/30 bg-black/20 p-3">
@@ -969,27 +1424,6 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                   );
                 })}
 
-              {state.cassettes.map((cassette) => {
-                const layout = layoutByKey.get(`cassette:${cassette.id}`);
-                if (!layout) return null;
-
-                return (
-                  <DraggableCard
-                    key={cassette.id}
-                    dragId={`cassette:${cassette.id}`}
-                    x={layout.x}
-                    y={layout.y}
-                    rotation={layout.rotation}
-                    zIndex={layout.zIndex}
-                  >
-                    <div className="w-56 rounded-xl border border-amber-500/30 bg-[#20140f]/90 p-3 shadow-2xl">
-                      <p className="mb-2 text-xs uppercase tracking-[0.25em] text-amber-200/70">Cassette</p>
-                      <p className="mb-2 text-sm font-semibold text-amber-100">{cassette.title}</p>
-                      <audio controls src={cassette.audio_url} className="h-8 w-full" preload="metadata" />
-                    </div>
-                  </DraggableCard>
-                );
-              })}
             </DndContext>
           </div>
 
@@ -1081,6 +1515,30 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
           50% {
             opacity: 1;
             transform: translateX(-50%) scale(1.08);
+          }
+        }
+
+        @keyframes recordSpin {
+          from {
+            transform: translateX(-50%) rotate(0deg);
+          }
+          to {
+            transform: translateX(-50%) rotate(360deg);
+          }
+        }
+
+        @keyframes vinylDrop {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-18px) scale(0.92);
+          }
+          70% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(1px) scale(1.02);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
           }
         }
       `}</style>

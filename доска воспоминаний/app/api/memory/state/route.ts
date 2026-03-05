@@ -10,6 +10,11 @@ const defaultStickers = [
   { name: "Мечта", emoji: "☁️", color: "#38bdf8" },
 ] as const;
 
+function isExternalUrl(value: string | null | undefined) {
+  if (!value) return false;
+  return /^https?:\/\//i.test(value);
+}
+
 async function ensureDefaultStickers(userId: string) {
   const service = getServiceClient();
   const { data: categories } = await service
@@ -186,10 +191,24 @@ export async function GET(request: NextRequest) {
     stickers,
     stickerCategories: categoryRows ?? [],
     cassettes:
-      (cassetteRows ?? []).map((cassette) => ({
-        ...cassette,
-        audio_url: getPublicFileUrl("memory-audio", cassette.audio_path),
-      })) ?? [],
+      (cassetteRows ?? []).map((cassette) => {
+        const audio_url = isExternalUrl(cassette.audio_path)
+          ? cassette.audio_path
+          : getPublicFileUrl("memory-audio", cassette.audio_path);
+
+        const cover_url = cassette.cover_path
+          ? isExternalUrl(cassette.cover_path)
+            ? cassette.cover_path
+            : getPublicFileUrl("memory-photos", cassette.cover_path)
+          : null;
+
+        return {
+          ...cassette,
+          audio_url,
+          source_kind: isExternalUrl(cassette.audio_path) ? ("link" as const) : ("upload" as const),
+          cover_url,
+        };
+      }) ?? [],
     layoutItems: (layoutRows ?? []).map((item) => ({
       itemType: item.item_type,
       refId: item.ref_id,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import ExportRenderBoard from "@/components/memory-board/ExportRenderBoard";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { isUserAllowed } from "@/lib/auth/access";
 
 export const metadata: Metadata = {
   robots: {
@@ -22,6 +23,10 @@ export default async function ExportRenderPage({
 
   if (!user) {
     redirect("/dnewnik-cork-7g4m/auth");
+  }
+
+  if (!isUserAllowed(user)) {
+    redirect("/dnewnik-cork-7g4m/auth?error=access_denied");
   }
 
   const params = await searchParams;

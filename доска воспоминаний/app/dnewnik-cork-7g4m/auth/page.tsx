@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
+function normalizeNextPath(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/dnewnik-cork-7g4m";
+  }
+
+  return value;
+}
+
 export default function MemoryAuthPage() {
   const router = useRouter();
 
@@ -13,16 +21,34 @@ export default function MemoryAuthPage() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const next = params.get("next");
-    if (next) {
-      setNextPath(next);
-    }
+    setNextPath(normalizeNextPath(params.get("next")));
+    setAccessDenied(params.get("error") === "access_denied");
   }, []);
+
+  async function handleSwitchAccount() {
+    setSwitchingAccount(true);
+    setError(null);
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+      setAccessDenied(false);
+      router.replace("/dnewnik-cork-7g4m/auth");
+      router.refresh();
+    } catch (switchError) {
+      const text = switchError instanceof Error ? switchError.message : "Не удалось выйти из аккаунта";
+      setError(text);
+    } finally {
+      setSwitchingAccount(false);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,6 +94,20 @@ export default function MemoryAuthPage() {
       <div className="mx-auto max-w-md rounded-3xl border border-amber-700/30 bg-black/35 p-7 backdrop-blur-sm">
         <p className="mb-2 text-sm uppercase tracking-[0.3em] text-amber-300/70">Секретная страница</p>
         <h1 className="mb-6 text-3xl font-semibold text-amber-100">Дневник Воспоминаний</h1>
+
+        {accessDenied ? (
+          <div className="mb-6 rounded-xl border border-rose-400/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+            Этому аккаунту доступ пока не выдан. Войдите под другим email или попросите владельца добавить вас.
+            <button
+              type="button"
+              onClick={handleSwitchAccount}
+              disabled={switchingAccount}
+              className="mt-3 w-full rounded-lg border border-rose-300/50 px-3 py-2 text-sm text-rose-100 transition hover:bg-rose-400/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {switchingAccount ? "Выходим..." : "Выйти из текущего аккаунта"}
+            </button>
+          </div>
+        ) : null}
 
         <div className="mb-6 flex gap-2 rounded-xl border border-amber-700/40 bg-[#1d130d] p-1">
           <button

@@ -1,6 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseServiceClient } from "@/lib/supabase/service";
+import { isUserAllowed } from "@/lib/auth/access";
 
 export async function getAuthenticatedUser() {
   const supabase = await getSupabaseServerClient();
@@ -10,6 +11,10 @@ export async function getAuthenticatedUser() {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
+    return null;
+  }
+
+  if (!isUserAllowed(user)) {
     return null;
   }
 
