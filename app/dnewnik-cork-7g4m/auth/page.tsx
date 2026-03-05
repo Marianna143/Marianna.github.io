@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  isAllowedLocalEmail,
+  MEMORY_OWNER_EMAIL,
+  MEMORY_TEST_ACCOUNT,
+  normalizeLocalEmail,
+} from "@/lib/memory-board/local-auth";
+import { deleteBoardStatesForUsers } from "@/lib/memory-board/local-store";
 
 type LocalAccount = {
   userId: string;
@@ -21,10 +28,7 @@ const LOCAL_ACCOUNTS_KEY = "memory_local_accounts_v1";
 const LOCAL_SESSION_KEY = "memory_local_session";
 const LOCAL_SESSION_COOKIE_KEY = "memory_local_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 365;
-
-function normalizeEmail(value: string) {
-  return value.trim().toLowerCase();
-}
+const LEGACY_BOARD_PREFIXES = ["memory-board-local-v1", "memory-board-local-v2"];
 
 function createLocalId(prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -62,6 +66,11 @@ function writeLocalSession(session: LocalSession) {
   document.cookie = `${LOCAL_SESSION_COOKIE_KEY}=${encoded}; Path=/; Max-Age=${SESSION_MAX_AGE}; SameSite=Lax`;
 }
 
+function clearLocalSession() {
+  localStorage.removeItem(LOCAL_SESSION_KEY);
+  document.cookie = `${LOCAL_SESSION_COOKIE_KEY}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
 function readLocalSession() {
   const raw = localStorage.getItem(LOCAL_SESSION_KEY);
   if (!raw) {
@@ -78,6 +87,101 @@ function readLocalSession() {
   } catch {
     return null;
   }
+}
+
+function removeLegacyBoardStorage(userIds: string[]) {
+  if (!userIds.length) {
+    return;
+  }
+
+  for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+    const key = localStorage.key(index);
+    if (!key) {
+      continue;
+    }
+
+    const shouldDelete = userIds.some((userId) =>
+      LEGACY_BOARD_PREFIXES.some((prefix) => key.startsWith(`${prefix}:${userId}:`)),
+    );
+
+    if (shouldDelete) {
+      localStorage.removeItem(key);
+    }
+  }
+}
+
+function enforceManagedAccounts() {
+  const accounts = readLocalAccounts();
+  const removedUserIds = new Set<string>();
+
+  let ownerAccount: LocalAccount | null = null;
+  let testAccount: LocalAccount | null = null;
+
+  for (const account of accounts) {
+    const normalizedEmail = normalizeLocalEmail(account.email);
+
+    if (normalizedEmail === MEMORY_OWNER_EMAIL) {
+      if (!ownerAccount) {
+        ownerAccount = {
+          ...account,
+          email: normalizedEmail,
+          displayName: account.displayName ?? "",
+        };
+      } else {
+        removedUserIds.add(account.userId);
+      }
+      continue;
+    }
+
+    if (normalizedEmail === MEMORY_TEST_ACCOUNT.email) {
+      if (!testAccount) {
+        testAccount = {
+          ...account,
+          email: MEMORY_TEST_ACCOUNT.email,
+          displayName: MEMORY_TEST_ACCOUNT.displayName,
+          password: MEMORY_TEST_ACCOUNT.password,
+        };
+      } else {
+        removedUserIds.add(account.userId);
+      }
+      continue;
+    }
+
+    removedUserIds.add(account.userId);
+  }
+
+  if (testAccount && testAccount.userId !== MEMORY_TEST_ACCOUNT.userId) {
+    removedUserIds.add(testAccount.userId);
+    testAccount = {
+      ...testAccount,
+      userId: MEMORY_TEST_ACCOUNT.userId,
+    };
+  }
+
+  if (!testAccount) {
+    testAccount = {
+      userId: MEMORY_TEST_ACCOUNT.userId,
+      email: MEMORY_TEST_ACCOUNT.email,
+      password: MEMORY_TEST_ACCOUNT.password,
+      displayName: MEMORY_TEST_ACCOUNT.displayName,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  const nextAccounts = ownerAccount ? [ownerAccount, testAccount] : [testAccount];
+  const keepUserIds = new Set(nextAccounts.map((account) => account.userId));
+  const removed = [...removedUserIds].filter((userId) => !keepUserIds.has(userId));
+
+  writeLocalAccounts(nextAccounts);
+  removeLegacyBoardStorage(removed);
+
+  if (removed.length > 0) {
+    void deleteBoardStatesForUsers(removed).catch(() => {
+      return;
+    });
+  }
+
+  return nextAccounts;
 }
 
 export default function MemoryAuthPage() {
@@ -128,8 +232,20 @@ export default function MemoryAuthPage() {
       return;
     }
 
+    const accounts = enforceManagedAccounts();
     const session = readLocalSession();
+
     if (!session) {
+      return;
+    }
+
+    const normalizedSessionEmail = normalizeLocalEmail(session.email);
+    const matchesAccount = accounts.some(
+      (account) => account.userId === session.userId && normalizeLocalEmail(account.email) === normalizedSessionEmail,
+    );
+
+    if (!isAllowedLocalEmail(normalizedSessionEmail) || !matchesAccount) {
+      clearLocalSession();
       return;
     }
 
@@ -138,17 +254,21 @@ export default function MemoryAuthPage() {
   }, [isConfigured, nextPath, router]);
 
   async function handleLocalAuth() {
-    const normalizedEmail = normalizeEmail(email);
+    const normalizedEmail = normalizeLocalEmail(email);
     const trimmedName = displayName.trim();
 
     if (!normalizedEmail || !password) {
       throw new Error("Email и пароль обязательны");
     }
 
-    const accounts = readLocalAccounts();
+    if (!isAllowedLocalEmail(normalizedEmail)) {
+      throw new Error("Доступ только для владельца и тестового аккаунта");
+    }
+
+    const accounts = enforceManagedAccounts();
 
     if (mode === "sign-in") {
-      const account = accounts.find((item) => normalizeEmail(item.email) === normalizedEmail);
+      const account = accounts.find((item) => normalizeLocalEmail(item.email) === normalizedEmail);
 
       if (!account || account.password !== password) {
         throw new Error("Неверный email или пароль");
@@ -165,11 +285,15 @@ export default function MemoryAuthPage() {
       return;
     }
 
+    if (normalizedEmail === MEMORY_TEST_ACCOUNT.email) {
+      throw new Error("Тестовый аккаунт уже создан и закреплен для проверок");
+    }
+
     if (password.length < 6) {
       throw new Error("Пароль должен быть минимум 6 символов");
     }
 
-    const exists = accounts.some((item) => normalizeEmail(item.email) === normalizedEmail);
+    const exists = accounts.some((item) => normalizeLocalEmail(item.email) === normalizedEmail);
     if (exists) {
       throw new Error("Аккаунт с таким email уже существует");
     }
@@ -182,7 +306,12 @@ export default function MemoryAuthPage() {
       createdAt: new Date().toISOString(),
     };
 
-    writeLocalAccounts([...accounts, newAccount]);
+    const normalizedAccounts = enforceManagedAccounts()
+      .filter((account) => normalizeLocalEmail(account.email) !== normalizedEmail)
+      .concat(newAccount);
+
+    writeLocalAccounts(normalizedAccounts);
+
     writeLocalSession({
       userId: newAccount.userId,
       email: newAccount.email,
@@ -259,7 +388,7 @@ export default function MemoryAuthPage() {
 
         {isConfigured === false ? (
           <div className="mb-4 rounded-xl border border-emerald-300/40 bg-emerald-900/30 p-3 text-sm text-emerald-100">
-            Локальный режим включен: данные хранятся только на этом ноутбуке (в браузере).
+            Локальный режим: храним только ваш аккаунт ({MEMORY_OWNER_EMAIL}) и один тестовый профиль.
           </div>
         ) : null}
 

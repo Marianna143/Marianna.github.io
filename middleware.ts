@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAllowedLocalEmail } from "@/lib/memory-board/local-auth";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
 const HIDDEN_ROUTE = "/dnewnik-cork-7g4m";
@@ -18,7 +19,7 @@ function hasValidLocalSession(request: NextRequest) {
 
   try {
     const parsed = JSON.parse(decodeURIComponent(rawValue)) as LocalSession;
-    return Boolean(parsed?.userId && parsed?.email);
+    return Boolean(parsed?.userId && parsed?.email && isAllowedLocalEmail(parsed.email));
   } catch {
     return false;
   }

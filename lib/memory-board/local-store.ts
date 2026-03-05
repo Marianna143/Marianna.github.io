@@ -88,3 +88,44 @@ export async function writeBoardStateToStore(storageKey: string, state: MemoryBo
     };
   });
 }
+
+export async function deleteBoardStatesForUsers(userIds: string[]) {
+  if (!userIds.length) {
+    return;
+  }
+
+  const db = await openLocalDatabase();
+  const prefixes = userIds.map((userId) => `memory-board-local-v2:${userId}:`);
+
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.openCursor();
+
+    request.onerror = () => {
+      reject(request.error ?? new Error("Не удалось очистить локальные доски"));
+    };
+
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) {
+        return;
+      }
+
+      const key = String(cursor.key);
+      if (prefixes.some((prefix) => key.startsWith(prefix))) {
+        cursor.delete();
+      }
+
+      cursor.continue();
+    };
+
+    transaction.oncomplete = () => {
+      resolve();
+    };
+
+    transaction.onerror = () => {
+      reject(transaction.error ?? new Error("Не удалось завершить очистку локальных досок"));
+    };
+  });
+}

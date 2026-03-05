@@ -57,6 +57,20 @@ type DraggableCardProps = {
   children: React.ReactNode;
 };
 
+type GarlandBulb = {
+  index: number;
+  leftPct: number;
+  wireY: number;
+  dropLength: number;
+  bulbWidth: number;
+  bulbHeight: number;
+  glowSize: number;
+  warmShift: number;
+  pulseDuration: number;
+  flickerDuration: number;
+  delay: number;
+};
+
 const FALLBACK_STICKER_COLORS = ["#f59e0b", "#22c55e", "#0ea5e9", "#f97316", "#ec4899"];
 const VINYL_SOURCES = {
   upload: "upload",
@@ -101,6 +115,20 @@ function DraggableCard({ dragId, x, y, rotation, zIndex, children }: DraggableCa
   );
 }
 
+function buildGarlandWirePath(points: Array<{ x: number; y: number }>) {
+  if (!points.length) return "";
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+  for (let index = 1; index < points.length; index += 1) {
+    const prev = points[index - 1];
+    const current = points[index];
+    const controlX = (prev.x + current.x) / 2;
+    const controlY = Math.max(prev.y, current.y) + 3.8;
+    path += ` Q ${controlX.toFixed(2)} ${controlY.toFixed(2)} ${current.x.toFixed(2)} ${current.y.toFixed(2)}`;
+  }
+  return path;
+}
+
 export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
   const boardRef = useRef<HTMLDivElement | null>(null);
 
@@ -113,6 +141,8 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
   const [mainEvent, setMainEvent] = useState("");
   const [description, setDescription] = useState("");
   const [selectedStickerIds, setSelectedStickerIds] = useState<string[]>([]);
+  const [stickerSearch, setStickerSearch] = useState("");
+  const [activeStickerCategoryFilter, setActiveStickerCategoryFilter] = useState<string>("all");
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const [savingEntry, setSavingEntry] = useState(false);
 
@@ -151,6 +181,40 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
   const newlyCreatedCassetteIdRef = useRef<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  const garlandBulbs = useMemo<GarlandBulb[]>(
+    () =>
+      Array.from({ length: 18 }, (_, index) => {
+        const ratio = (index + 0.5) / 18;
+        const arch = Math.sin(Math.PI * ratio);
+        const sway = Math.cos((index * 1.7 + 0.8) * Math.PI) * 0.6;
+
+        return {
+          index,
+          leftPct: ratio * 100,
+          wireY: 7 + arch * 11 + sway,
+          dropLength: 7 + (index % 4),
+          bulbWidth: 8 + ((index + 1) % 2),
+          bulbHeight: 13 + ((index + 2) % 3),
+          glowSize: 22 + (index % 4) * 2,
+          warmShift: -6 + (index % 5) * 3,
+          pulseDuration: 2.2 + (index % 4) * 0.35,
+          flickerDuration: 8 + (index % 5) * 1.4,
+          delay: index * 0.17,
+        };
+      }),
+    [],
+  );
+
+  const garlandWirePath = useMemo(() => {
+    const points = [
+      { x: 0, y: 8 },
+      ...garlandBulbs.map((bulb) => ({ x: bulb.leftPct, y: bulb.wireY })),
+      { x: 100, y: 9 },
+    ];
+
+    return buildGarlandWirePath(points);
+  }, [garlandBulbs]);
 
   const fetchState = useCallback(async (selectedYear: number) => {
     setLoading(true);
@@ -203,6 +267,37 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
     });
     return map;
   }, [state]);
+
+  const filteredStickers = useMemo(() => {
+    if (!state) return [];
+
+    const query = stickerSearch.trim().toLowerCase();
+    return state.stickers.filter((sticker) => {
+      const categoryMatches =
+        activeStickerCategoryFilter === "all" || sticker.category_id === activeStickerCategoryFilter;
+      if (!categoryMatches) return false;
+
+      if (!query.length) return true;
+
+      return (
+        sticker.name.toLowerCase().includes(query) ||
+        sticker.emoji.toLowerCase().includes(query)
+      );
+    });
+  }, [activeStickerCategoryFilter, state, stickerSearch]);
+
+  useEffect(() => {
+    if (!state) return;
+    if (activeStickerCategoryFilter === "all") return;
+
+    const categoryExists = state.stickerCategories.some(
+      (category) => category.id === activeStickerCategoryFilter,
+    );
+
+    if (!categoryExists) {
+      setActiveStickerCategoryFilter("all");
+    }
+  }, [activeStickerCategoryFilter, state]);
 
   const layoutByKey = useMemo(() => {
     const map = new Map<string, LayoutItem>();
@@ -957,29 +1052,76 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
             ) : null}
 
             <div>
-              <p className="mb-2 text-xs uppercase tracking-[0.16em] text-amber-300/70">Стикеры дня</p>
-              <div className="flex flex-wrap gap-2">
-                {state.stickers.map((sticker) => {
-                  const checked = selectedStickerIds.includes(sticker.id);
-                  return (
-                    <button
-                      key={sticker.id}
-                      type="button"
-                      onClick={() =>
-                        setSelectedStickerIds((prev) =>
-                          checked ? prev.filter((id) => id !== sticker.id) : [...prev, sticker.id],
-                        )
-                      }
-                      className={`rounded-lg border px-2 py-1 text-xs ${
-                        checked
-                          ? "border-amber-300 bg-amber-500/30"
-                          : "border-amber-700/50 bg-black/25 hover:bg-amber-500/20"
-                      }`}
-                    >
-                      {sticker.emoji} {sticker.name}
-                    </button>
-                  );
-                })}
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs uppercase tracking-[0.16em] text-amber-300/70">Стикеры дня</p>
+                <span className="text-[10px] uppercase tracking-[0.16em] text-amber-200/60">
+                  Выбрано: {selectedStickerIds.length}
+                </span>
+              </div>
+
+              <div className="mb-2 grid grid-cols-[1fr_120px] gap-2">
+                <input
+                  value={stickerSearch}
+                  onChange={(event) => setStickerSearch(event.target.value)}
+                  placeholder="Поиск стикеров"
+                  className="rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-xs"
+                />
+                <select
+                  value={activeStickerCategoryFilter}
+                  onChange={(event) => setActiveStickerCategoryFilter(event.target.value)}
+                  className="rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-xs"
+                >
+                  <option value="all">Все</option>
+                  {state.stickerCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.icon} {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="max-h-52 overflow-y-auto rounded-lg border border-amber-700/35 bg-black/15 p-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {filteredStickers.map((sticker) => {
+                    const checked = selectedStickerIds.includes(sticker.id);
+                    return (
+                      <button
+                        key={sticker.id}
+                        type="button"
+                        onClick={() =>
+                          setSelectedStickerIds((prev) =>
+                            checked ? prev.filter((id) => id !== sticker.id) : [...prev, sticker.id],
+                          )
+                        }
+                        className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs ${
+                          checked
+                            ? "border-amber-300 bg-amber-500/30"
+                            : "border-amber-700/50 bg-black/25 hover:bg-amber-500/20"
+                        }`}
+                      >
+                        {sticker.image_url ? (
+                          <img
+                            src={sticker.image_url}
+                            alt={sticker.name}
+                            className="h-6 w-6 shrink-0 object-contain"
+                            loading="lazy"
+                            style={{ filter: "saturate(0.82) contrast(1.06)" }}
+                          />
+                        ) : (
+                          <span className="grid h-6 w-6 shrink-0 place-items-center text-base">
+                            {sticker.emoji || "✨"}
+                          </span>
+                        )}
+                        <span className="truncate">{sticker.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {filteredStickers.length === 0 ? (
+                  <p className="px-1 py-3 text-center text-xs text-amber-200/70">
+                    Ничего не найдено. Попробуй другой запрос или категорию.
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -1329,16 +1471,105 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
               <div className="h-full w-full" style={{ backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"120\"><filter id=\"n\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.95\" numOctaves=\"3\"/></filter><rect width=\"120\" height=\"120\" filter=\"url(%23n)\" opacity=\"0.4\"/></svg>')" }} />
             </div>
 
-            <div className="pointer-events-none absolute left-0 right-0 top-1 z-10 flex items-start justify-around px-4">
-              {Array.from({ length: 18 }).map((_, index) => (
-                <div key={`lamp-${index}`} className="relative h-9 w-3">
-                  <div className="absolute left-1/2 top-0 h-3 w-[2px] -translate-x-1/2 bg-amber-900" />
+            <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 h-24 select-none">
+              <svg
+                className="absolute inset-0 h-full w-full"
+                viewBox="0 0 100 28"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="garland-wire-highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.28)" />
+                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d={garlandWirePath}
+                  fill="none"
+                  stroke="#241b16"
+                  strokeWidth="1.35"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d={garlandWirePath}
+                  fill="none"
+                  stroke="url(#garland-wire-highlight)"
+                  strokeWidth="0.38"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  transform="translate(0 -0.45)"
+                />
+              </svg>
+
+              {garlandBulbs.map((bulb) => (
+                <div key={`lamp-${bulb.index}`} className="absolute top-0" style={{ left: `calc(${bulb.leftPct}% - 7px)` }}>
                   <div
-                    className="absolute left-1/2 top-2 h-4 w-3 -translate-x-1/2 rounded-full"
+                    className="absolute left-1/2 -translate-x-1/2 rounded-full bg-black/35 blur-[3px]"
                     style={{
-                      background: "radial-gradient(circle at 50% 35%, #fff7c5, #f59e0b)",
-                      boxShadow: "0 0 10px rgba(255,209,102,0.6)",
-                      animation: `pulse ${2 + (index % 3) * 0.5}s ease-in-out infinite`,
+                      top: `${bulb.wireY + bulb.dropLength + bulb.bulbHeight + 2}px`,
+                      width: `${bulb.bulbWidth + 7}px`,
+                      height: "4px",
+                    }}
+                  />
+                  <div
+                    className="absolute left-1/2 w-[1.5px] -translate-x-1/2 bg-[#2f2620]"
+                    style={{ top: `${bulb.wireY}px`, height: `${bulb.dropLength}px` }}
+                  />
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 rounded-[3px] border border-black/35"
+                    style={{
+                      top: `${bulb.wireY + bulb.dropLength - 1}px`,
+                      width: "9px",
+                      height: "7px",
+                      background: "linear-gradient(180deg, #3d312a 0%, #2a201a 65%, #211914 100%)",
+                      boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 1px 2px rgba(0,0,0,0.35)",
+                    }}
+                  />
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 rounded-full"
+                    style={{
+                      top: `${bulb.wireY + bulb.dropLength + 3}px`,
+                      width: `${bulb.glowSize}px`,
+                      height: `${Math.round(bulb.glowSize * 0.82)}px`,
+                      background:
+                        "radial-gradient(ellipse at center, rgba(255,209,130,0.45) 0%, rgba(255,180,82,0.18) 45%, rgba(255,140,40,0) 78%)",
+                      filter: "blur(2px)",
+                      animation: `garlandHalo ${bulb.pulseDuration + 0.6}s ease-in-out ${bulb.delay}s infinite`,
+                      opacity: 0.9,
+                    }}
+                  />
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 rounded-[999px_999px_70%_70%] border border-amber-100/35"
+                    style={{
+                      top: `${bulb.wireY + bulb.dropLength + 2}px`,
+                      width: `${bulb.bulbWidth}px`,
+                      height: `${bulb.bulbHeight}px`,
+                      background: `radial-gradient(circle at 48% 28%, rgba(255,255,245,0.95) 0%, rgba(255,235,178,0.9) 30%, hsl(${38 + bulb.warmShift} 94% 58%) 70%, hsl(${30 + bulb.warmShift} 90% 45%) 100%)`,
+                      boxShadow:
+                        "0 0 16px rgba(255,184,84,0.55), 0 2px 3px rgba(0,0,0,0.28), inset -1px -2px 4px rgba(138,68,20,0.42), inset 1px 1px 3px rgba(255,255,255,0.4)",
+                      animation: `garlandBulbGlow ${bulb.pulseDuration}s ease-in-out ${bulb.delay}s infinite, garlandBulbFlicker ${bulb.flickerDuration}s steps(1,end) ${bulb.delay}s infinite`,
+                      transformOrigin: "50% 15%",
+                    }}
+                  />
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 rounded-full bg-white/55"
+                    style={{
+                      top: `${bulb.wireY + bulb.dropLength + 4}px`,
+                      width: `${Math.max(2, Math.round(bulb.bulbWidth * 0.34))}px`,
+                      height: "2px",
+                      filter: "blur(0.2px)",
+                    }}
+                  />
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 rounded-full"
+                    style={{
+                      top: `${bulb.wireY + bulb.dropLength + 7}px`,
+                      width: "1px",
+                      height: `${Math.max(3, Math.round(bulb.bulbHeight * 0.35))}px`,
+                      background: "linear-gradient(180deg, rgba(255,248,220,0.96), rgba(255,208,122,0.72))",
+                      boxShadow: "0 0 2px rgba(255,220,145,0.8)",
                     }}
                   />
                 </div>
@@ -1506,15 +1737,52 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
       ) : null}
 
       <style jsx global>{`
-        @keyframes pulse {
+        @keyframes garlandBulbGlow {
           0%,
           100% {
-            opacity: 0.6;
+            opacity: 0.84;
+            transform: translateX(-50%) scale(0.96);
+          }
+          25% {
+            opacity: 0.96;
+            transform: translateX(-50%) scale(1);
+          }
+          58% {
+            opacity: 1;
+            transform: translateX(-50%) scale(1.04);
+          }
+          78% {
+            opacity: 0.9;
+            transform: translateX(-50%) scale(0.99);
+          }
+        }
+
+        @keyframes garlandBulbFlicker {
+          0%,
+          88%,
+          100% {
+            filter: brightness(1) saturate(1);
+          }
+          89% {
+            filter: brightness(0.88) saturate(0.9);
+          }
+          90% {
+            filter: brightness(1.06) saturate(1.08);
+          }
+          91% {
+            filter: brightness(0.92) saturate(0.97);
+          }
+        }
+
+        @keyframes garlandHalo {
+          0%,
+          100% {
+            opacity: 0.66;
             transform: translateX(-50%) scale(0.92);
           }
           50% {
             opacity: 1;
-            transform: translateX(-50%) scale(1.08);
+            transform: translateX(-50%) scale(1.12);
           }
         }
 

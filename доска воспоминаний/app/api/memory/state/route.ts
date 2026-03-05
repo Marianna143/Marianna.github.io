@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser, getPublicFileUrl, getServiceClient } from "@/lib/memory-board/server";
+import {
+  STICKER_LIBRARY_CATEGORIES,
+  STICKER_LIBRARY_STICKERS,
+} from "@/lib/memory-board/sticker-library";
 import type { MemoryBoardState, Sticker } from "@/lib/memory-board/types";
 
-const defaultStickers = [
-  { name: "Сердечко", emoji: "💛", color: "#f59e0b" },
-  { name: "Звезда", emoji: "⭐", color: "#facc15" },
-  { name: "Тепло", emoji: "🕯️", color: "#fb7185" },
-  { name: "Смех", emoji: "😂", color: "#22c55e" },
-  { name: "Мечта", emoji: "☁️", color: "#38bdf8" },
-] as const;
+type StickerCategoryRow = {
+  id: string;
+  name: string;
+  sort_order: number;
+};
+
+type StickerRow = {
+  id: string;
+  name: string;
+  image_path: string | null;
+  category_id: string | null;
+  sort_order: number;
+};
 
 function isExternalUrl(value: string | null | undefined) {
   if (!value) return false;
@@ -17,38 +27,153 @@ function isExternalUrl(value: string | null | undefined) {
 
 async function ensureDefaultStickers(userId: string) {
   const service = getServiceClient();
-  const { data: categories } = await service
+
+  const { data: rawCategories } = await service
     .from("sticker_categories")
-    .select("id")
+    .select("id, name, sort_order")
     .eq("user_id", userId)
     .order("sort_order", { ascending: true });
 
-  let categoryId = categories?.[0]?.id ?? null;
+  const categories = (rawCategories ?? []) as StickerCategoryRow[];
+  const categoryIdByName = new Map<string, string>(
+    categories.map((category) => [category.name, category.id]),
+  );
+  const categoryIdByKey = new Map<string, string | null>();
 
-  if (!categoryId) {
-    const { data: createdCategory } = await service
+  let nextCategorySortOrder = categories.length;
+  const categoriesToInsert = STICKER_LIBRARY_CATEGORIES
+    .filter((category) => !categoryIdByName.has(category.name))
+    .map((category) => ({
+      user_id: userId,
+      name: category.name,
+      icon: category.icon,
+      color: category.color,
+      sort_order: nextCategorySortOrder++,
+    }));
+
+  if (categoriesToInsert.length > 0) {
+    const { data: createdCategories } = await service
       .from("sticker_categories")
-      .insert({
-        user_id: userId,
-        name: "Милые",
-        icon: "🎀",
-        color: "#f59e0b",
-        sort_order: 0,
-      })
-      .select("id")
-      .single();
+      .insert(categoriesToInsert)
+      .select("id, name");
 
-    categoryId = createdCategory?.id ?? null;
+    for (const row of (createdCategories ?? []) as Array<{ id: string; name: string }>) {
+      categoryIdByName.set(row.name, row.id);
+    }
   }
 
+  for (const category of STICKER_LIBRARY_CATEGORIES) {
+    categoryIdByKey.set(category.key, categoryIdByName.get(category.name) ?? null);
+  }
+
+  const { data: rawStickers } = await service
+    .from("stickers")
+    .select("id, name, image_path, category_id, sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true });
+
+  const stickers = (rawStickers ?? []) as StickerRow[];
+  const stickerByName = new Map<string, StickerRow>(
+    stickers.map((sticker) => [sticker.name, sticker]),
+  );
+
+  let nextStickerSortOrder = stickers.length;
+  const stickersToInsert: Array<{
+    user_id: string;
+    name: string;
+    emoji: string;
+    image_path: string;
+    color: string;
+    category_id: string | null;
+    sort_order: number;
+  }> = [];
+
+  const stickersToUpdate: Array<{
+    id: string;
+    image_path: string;
+    category_id: string | null;
+  }> = [];
+
+  for (const stickerPreset of STICKER_LIBRARY_STICKERS) {
+    const categoryId = categoryIdByKey.get(stickerPreset.categoryKey) ?? null;
+    const existingSticker = stickerByName.get(stickerPreset.name);
+
+    if (!existingSticker) {
+      stickersToInsert.push({
+        user_id: userId,
+        name: stickerPreset.name,
+        emoji: stickerPreset.emoji,
+        image_path: stickerPreset.imagePath,
+        color: stickerPreset.color,
+        category_id: categoryId,
+        sort_order: nextStickerSortOrder++,
+      });
+      continue;
+    }
+
+    if (!existingSticker.image_path || !existingSticker.category_id) {
+      stickersToUpdate.push({
+        id: existingSticker.id,
+        image_path: existingSticker.image_path || stickerPreset.imagePath,
+        category_id: existingSticker.category_id || categoryId,
+      });
+    }
+  }
+
+  if (stickersToInsert.length > 0) {
+    await service.from("stickers").insert(
+      stickersToInsert.map((sticker) => ({
+        user_id: sticker.user_id,
+        name: sticker.name,
+        emoji: sticker.emoji,
+        image_path: sticker.image_path,
+        color: sticker.color,
+        category_id: sticker.category_id,
+        sort_order: sticker.sort_order,
+      })),
+    );
+  }
+
+  if (stickersToUpdate.length > 0) {
+    await Promise.all(
+      stickersToUpdate.map((sticker) =>
+        service
+          .from("stickers")
+          .update({
+            image_path: sticker.image_path,
+            category_id: sticker.category_id,
+          })
+          .eq("id", sticker.id)
+          .eq("user_id", userId),
+      ),
+    );
+  }
+}
+
+async function ensureDefaultStickersFallback(userId: string) {
+  const service = getServiceClient();
   const { data: existing } = await service.from("stickers").select("id").eq("user_id", userId).limit(1);
   if (existing && existing.length > 0) return;
 
+  const { data: category } = await service
+    .from("sticker_categories")
+    .insert({
+      user_id: userId,
+      name: "Милые",
+      icon: "🎀",
+      color: "#f59e0b",
+      sort_order: 0,
+    })
+    .select("id")
+    .single();
+
+  const categoryId = category?.id ?? null;
   await service.from("stickers").insert(
-    defaultStickers.map((sticker, index) => ({
+    STICKER_LIBRARY_STICKERS.slice(0, 8).map((sticker, index) => ({
       user_id: userId,
       name: sticker.name,
       emoji: sticker.emoji,
+      image_path: sticker.imagePath,
       color: sticker.color,
       category_id: categoryId,
       sort_order: index,
@@ -92,7 +217,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to load board" }, { status: 500 });
   }
 
-  await ensureDefaultStickers(user.id);
+  try {
+    await ensureDefaultStickers(user.id);
+  } catch {
+    await ensureDefaultStickersFallback(user.id);
+  }
 
   const { data: entryRows } = await service
     .from("day_entries")
@@ -182,7 +311,11 @@ export async function GET(request: NextRequest) {
 
   const stickers: Sticker[] = (stickerRows ?? []).map((sticker) => ({
     ...sticker,
-    image_url: sticker.image_path ? getPublicFileUrl("memory-stickers", sticker.image_path) : null,
+    image_url: sticker.image_path
+      ? isExternalUrl(sticker.image_path)
+        ? sticker.image_path
+        : getPublicFileUrl("memory-stickers", sticker.image_path)
+      : null,
   }));
 
   const payload: MemoryBoardState = {

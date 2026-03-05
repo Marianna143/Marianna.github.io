@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import MemoryBoardApp from "@/components/memory-board/MemoryBoardApp";
 import MemoryBoardLocalApp from "@/components/memory-board/MemoryBoardLocalApp";
+import { isAllowedLocalEmail } from "@/lib/memory-board/local-auth";
 import { hasSupabaseClientEnv } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,6 +18,10 @@ function parseLocalSession(rawValue: string | undefined): LocalSession | null {
   try {
     const parsed = JSON.parse(decodeURIComponent(rawValue)) as LocalSession;
     if (!parsed?.userId || !parsed?.email) {
+      return null;
+    }
+
+    if (!isAllowedLocalEmail(parsed.email)) {
       return null;
     }
 
