@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --background: #120c08;
+  --foreground: #fef3c7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-plus-jakarta), sans-serif;
+}
+
+.font-handwriting {
+  font-family: var(--font-marck-script), cursive;
+}
