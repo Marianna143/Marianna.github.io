@@ -91,6 +91,9 @@ const PHOTO_GRID_X_STEP = 236;
 const PHOTO_GRID_Y_STEP = 328;
 const BOARD_PADDING_X = 90;
 const BOARD_PADDING_TOP = 570;
+const BOARD_FRAME_EXTRA_HEIGHT = 52;
+const BOARD_OVERVIEW_PADDING = 88;
+const BOARD_OVERVIEW_TOPBAR = 112;
 
 function localId(prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -462,6 +465,9 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
   const [modalEntry, setModalEntry] = useState<MemoryDayEntry | null>(null);
   const [modalPhotoIndex, setModalPhotoIndex] = useState(0);
 
+  const [isBoardOverviewOpen, setIsBoardOverviewOpen] = useState(false);
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+
   const [exporting, setExporting] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -519,6 +525,41 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     void fetchState(year);
   }, [fetchState, year]);
 
+  useEffect(() => {
+    const syncViewport = () => {
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+
+    return () => {
+      window.removeEventListener("resize", syncViewport);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isBoardOverviewOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key == "Escape") {
+        setIsBoardOverviewOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isBoardOverviewOpen]);
+
   const cards = useMemo<BoardCard[]>(() => {
     if (!state) return [];
 
@@ -556,6 +597,22 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
       height: Math.max(BOARD_MIN_HEIGHT, autoGridHeight, maxLayoutY),
     };
   }, [cards.length, layoutItems]);
+
+  const boardOverviewScale = useMemo(() => {
+    if (!isBoardOverviewOpen) {
+      return 1;
+    }
+
+    if (!viewportSize.width || !viewportSize.height) {
+      return 1;
+    }
+
+    const availableWidth = Math.max(280, viewportSize.width - BOARD_OVERVIEW_PADDING);
+    const availableHeight = Math.max(220, viewportSize.height - BOARD_OVERVIEW_TOPBAR);
+    const renderHeight = boardDimensions.height + BOARD_FRAME_EXTRA_HEIGHT;
+
+    return Math.min(1, availableWidth / boardDimensions.width, availableHeight / renderHeight);
+  }, [boardDimensions.height, boardDimensions.width, isBoardOverviewOpen, viewportSize.height, viewportSize.width]);
 
   const layoutByKey = useMemo(() => {
     const map = new Map<string, LayoutItem>();
@@ -1191,7 +1248,9 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     );
   }
 
-  const selectedPhoto = modalEntry ? modalEntry.photos[modalPhotoIndex] : null;
+  const modalPhotos = modalEntry ? buildPhotoboothPhotos(modalEntry) : [];
+  const selectedPhoto = modalPhotos[modalPhotoIndex] ?? null;
+  const isModalPhotobooth = modalPhotos.length > 1;
 
   return (
     <main className="min-h-screen bg-[#0f0806] text-amber-50">
@@ -1283,7 +1342,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                 {pendingPhotos.map((photo, index) => (
                   <div key={`${photo.storagePath}-${index}`} className="rounded-lg border border-emerald-700/40 bg-black/25 p-2">
                     <div className="mb-2 flex items-start justify-between gap-2">
-                      <img src={photo.url} alt="preview" className="h-20 w-full rounded-md object-cover" />
+                      <img src={photo.url} alt="preview" className="h-20 w-full rounded-md bg-[#081512] object-contain" />
                       <button
                         type="button"
                         onClick={() => removePendingPhoto(index)}
@@ -1539,14 +1598,39 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
           {savingLayout ? <p className="mt-2 text-xs text-emerald-200/70">Сохраняю раскладку...</p> : null}
         </aside>
 
-        <section className="min-h-[80vh] rounded-2xl border border-emerald-700/30 bg-[#071814] p-3">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-200/70">Пробковая стена · большой формат · ~300 фото</p>
-            <p className="text-xs text-emerald-100/70">Скролль доску в стороны и вниз</p>
+        <section
+          className={
+            isBoardOverviewOpen
+              ? "fixed inset-0 z-40 rounded-none border-0 bg-[#05100d]/95 p-4 xl:p-6"
+              : "min-h-[80vh] rounded-2xl border border-emerald-700/30 bg-[#071814] p-3"
+          }
+        >
+          <div className={`mb-3 flex items-center gap-2 px-1 ${isBoardOverviewOpen ? "justify-between" : "justify-end"}`}>
+            {isBoardOverviewOpen ? (
+              <p className="text-xs uppercase tracking-[0.2em] text-amber-200/70">
+                Общий вид доски · масштаб {Math.round(boardOverviewScale * 100)}%
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setIsBoardOverviewOpen((prev) => !prev)}
+              className="rounded-lg border border-amber-300/45 bg-black/30 px-3 py-1.5 text-xs text-amber-100 hover:bg-amber-200/15"
+            >
+              {isBoardOverviewOpen ? "Вернуть рабочий вид" : "Показать всю доску"}
+            </button>
           </div>
 
-          <div className="overflow-auto rounded-2xl border border-emerald-700/25 bg-[#050e0b] p-4">
-            <div ref={boardRef} className="relative rounded-[30px] bg-[#7f5a3b] p-6 shadow-[0_28px_70px_rgba(0,0,0,0.45)]" style={{ width: `${boardDimensions.width}px` }}>
+          <div
+            className={`${isBoardOverviewOpen ? "h-[calc(100vh-112px)] flex items-start justify-center" : "h-[calc(100vh-190px)]"} overflow-auto rounded-2xl border border-emerald-700/25 bg-[#050e0b] p-4`}
+          >
+            <div
+              ref={boardRef}
+              className="relative rounded-[30px] bg-[#7f5a3b] p-6 shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
+              style={{
+                width: `${boardDimensions.width}px`,
+                ...(isBoardOverviewOpen ? { zoom: boardOverviewScale } : {}),
+              }}
+            >
               <div className="pointer-events-none absolute inset-1 rounded-[28px] border-[18px] border-[#9a6f4a] shadow-[inset_0_0_0_2px_rgba(58,34,19,0.45)]" />
 
               <div
@@ -1644,27 +1728,31 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
 
                           {isPhotobooth ? (
                             <div
-                              className="relative rounded-sm p-2 pb-8 shadow-[0_16px_26px_rgba(0,0,0,0.34)]"
-                              style={{ backgroundColor: frameColor }}
+                              className="relative rounded-[10px] p-2.5 pb-8 shadow-[0_18px_30px_rgba(0,0,0,0.36)]"
+                              style={{
+                                background: `linear-gradient(168deg, ${frameColor}, #f7f2e9)`,
+                                border: "1px solid rgba(255,255,255,0.6)",
+                              }}
                             >
-                              <div className="space-y-1.5">
+                              <div className="space-y-2 rounded-[6px] bg-[#111217]/92 p-1.5">
                                 {card.photos.slice(0, 4).map((photo) => (
-                                  <img
-                                    key={photo.id}
-                                    src={photo.url}
-                                    alt={card.entry.main_event || "Фотобудка"}
-                                    className="h-20 w-full rounded-[2px] object-cover"
-                                  />
+                                  <div key={photo.id} className="h-[86px] overflow-hidden rounded-[3px] bg-[#0d0f12]">
+                                    <img
+                                      src={photo.url}
+                                      alt={card.entry.main_event || "Фотобудка"}
+                                      className="h-full w-full object-contain"
+                                    />
+                                  </div>
                                 ))}
                               </div>
 
                               {card.photos.length > 4 ? (
-                                <span className="absolute right-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                                <span className="absolute right-2 top-2 rounded bg-black/65 px-1.5 py-0.5 text-[10px] text-white">
                                   +{card.photos.length - 4}
                                 </span>
                               ) : null}
 
-                              <p className="font-handwriting absolute bottom-1 left-0 right-0 text-center text-sm text-zinc-700">
+                              <p className="font-handwriting absolute bottom-1 left-0 right-0 text-center text-sm text-[#6d5a46]">
                                 {format(new Date(card.entry.date), "d MMM yyyy", { locale: ru })}
                               </p>
                             </div>
@@ -1780,7 +1868,8 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
             </div>
           </div>
 
-          <div className="mt-3 space-y-2">
+          {!isBoardOverviewOpen ? (
+            <div className="mt-3 space-y-2">
             <div className="flex flex-wrap items-center gap-2 rounded-md border border-emerald-700/35 bg-black/25 px-2 py-1.5 text-xs">
               <span className="text-emerald-200/80">Слой новых стикеров:</span>
               <button
@@ -1816,14 +1905,15 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                 </button>
               ))}
             </div>
-          </div>
+            </div>
+          ) : null}
         </section>
       </div>
 
       {modalEntry && selectedPhoto ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-4" onClick={() => setModalEntry(null)}>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/78 px-4" onClick={() => setModalEntry(null)}>
           <div
-            className="max-w-2xl rounded-2xl border border-emerald-500/30 bg-[#052019] p-4"
+            className="w-full max-w-4xl rounded-2xl border border-amber-200/25 bg-[#10110f] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-3 flex items-start justify-between gap-3">
@@ -1842,7 +1932,38 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
               </button>
             </div>
 
-            <img src={selectedPhoto.url} alt="День" className="mb-3 max-h-[60vh] w-full rounded-xl object-contain" />
+            {isModalPhotobooth ? (
+              <div
+                className="mb-3 rounded-xl p-2.5"
+                style={{
+                  background: `linear-gradient(160deg, ${modalEntry.booth_frame_color || "#fffdf8"}, #f5eee2)`,
+                  border: "1px solid rgba(255,255,255,0.65)",
+                }}
+              >
+                <div className="space-y-2 rounded-lg bg-[#13151a]/92 p-2">
+                  {modalPhotos.map((photo, index) => (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      onClick={() => setModalPhotoIndex(index)}
+                      className={`group relative block w-full overflow-hidden rounded-md bg-[#0d0f13] p-1 text-left ${
+                        modalPhotoIndex === index ? "ring-2 ring-amber-200/70" : "ring-1 ring-black/35"
+                      }`}
+                    >
+                      <img src={photo.url} alt={`Кадр ${index + 1}`} className="max-h-[24vh] w-full object-contain" />
+                      <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                        Кадр {index + 1}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <p className="font-handwriting mt-2 text-center text-sm text-[#6d5a46]">
+                  {format(new Date(modalEntry.date), "d MMM yyyy", { locale: ru })}
+                </p>
+              </div>
+            ) : (
+              <img src={selectedPhoto.url} alt="День" className="mb-3 max-h-[60vh] w-full rounded-xl object-contain" />
+            )}
 
             <div className="mb-3 flex flex-wrap gap-2">
               <button
@@ -1866,7 +1987,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                 type="button"
                 onClick={() =>
                   setModalPhotoIndex((prev) =>
-                    prev === 0 ? modalEntry.photos.length - 1 : prev - 1,
+                    prev === 0 ? modalPhotos.length - 1 : prev - 1,
                   )
                 }
                 className="rounded-md border border-emerald-600/50 px-3 py-1 text-xs hover:bg-emerald-500/20"
@@ -1879,7 +2000,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
               </p>
               <button
                 type="button"
-                onClick={() => setModalPhotoIndex((prev) => (prev + 1) % modalEntry.photos.length)}
+                onClick={() => setModalPhotoIndex((prev) => (prev + 1) % modalPhotos.length)}
                 className="rounded-md border border-emerald-600/50 px-3 py-1 text-xs hover:bg-emerald-500/20"
               >
                 Вперёд
