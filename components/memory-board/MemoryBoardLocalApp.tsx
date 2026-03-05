@@ -27,6 +27,7 @@ import type {
   MemoryEntryPhoto,
   Sticker,
 } from "@/lib/memory-board/types";
+import { readBoardStateFromStore, writeBoardStateToStore } from "@/lib/memory-board/local-store";
 
 type PendingPhoto = {
   storagePath: string;
@@ -58,7 +59,8 @@ type DraggableCardProps = {
 
 const FALLBACK_STICKER_COLORS = ["#34d399", "#22c55e", "#0ea5e9", "#10b981", "#ec4899"];
 const LOCAL_SESSION_KEY = "memory_local_session";
-const LOCAL_STORAGE_PREFIX = "memory-board-local-v1";
+const LOCAL_BOARD_STORAGE_PREFIX = "memory-board-local-v2";
+const LEGACY_LOCAL_STORAGE_PREFIX = "memory-board-local-v1";
 const LOCAL_CATEGORY_ID = "local-category-main";
 
 function localId(prefix: string) {
@@ -69,8 +71,12 @@ function localId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
 }
 
-function localStorageKey(userId: string, year: number) {
-  return `${LOCAL_STORAGE_PREFIX}:${userId}:${year}`;
+function boardStorageKey(userId: string, year: number) {
+  return `${LOCAL_BOARD_STORAGE_PREFIX}:${userId}:${year}`;
+}
+
+function legacyLocalStorageKey(userId: string, year: number) {
+  return `${LEGACY_LOCAL_STORAGE_PREFIX}:${userId}:${year}`;
 }
 
 function createEmptyLocalState(userId: string, selectedYear: number): MemoryBoardState {
@@ -154,22 +160,23 @@ function createEmptyLocalState(userId: string, selectedYear: number): MemoryBoar
   };
 }
 
-function readLocalState(userId: string, selectedYear: number): MemoryBoardState {
-  const key = localStorageKey(userId, selectedYear);
+function readLegacyLocalState(userId: string, selectedYear: number): MemoryBoardState | null {
+  const key = legacyLocalStorageKey(userId, selectedYear);
   const raw = localStorage.getItem(key);
 
   if (!raw) {
-    return createEmptyLocalState(userId, selectedYear);
+    return null;
   }
 
   try {
     const parsed = JSON.parse(raw) as MemoryBoardState;
     if (!parsed?.board?.id) {
-      return createEmptyLocalState(userId, selectedYear);
+      return null;
     }
+
     return parsed;
   } catch {
-    return createEmptyLocalState(userId, selectedYear);
+    return null;
   }
 }
 
@@ -279,9 +286,12 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
 
   const persistState = useCallback(
     (nextState: MemoryBoardState) => {
-      localStorage.setItem(localStorageKey(userId, nextState.board.year), JSON.stringify(nextState));
       setState(nextState);
       setLayoutItems(nextState.layoutItems);
+
+      void writeBoardStateToStore(boardStorageKey(userId, nextState.board.year), nextState).catch(() => {
+        setError("Не удалось сохранить локальные данные доски");
+      });
     },
     [userId],
   );
@@ -292,9 +302,28 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
       setError(null);
 
       try {
-        const payload = readLocalState(userId, selectedYear);
-        setState(payload);
-        setLayoutItems(payload.layoutItems);
+        const key = boardStorageKey(userId, selectedYear);
+        const stored = await readBoardStateFromStore(key);
+
+        if (stored?.board?.id) {
+          setState(stored);
+          setLayoutItems(stored.layoutItems);
+          return;
+        }
+
+        const legacy = readLegacyLocalState(userId, selectedYear);
+        if (legacy) {
+          localStorage.removeItem(legacyLocalStorageKey(userId, selectedYear));
+          await writeBoardStateToStore(key, legacy);
+          setState(legacy);
+          setLayoutItems(legacy.layoutItems);
+          return;
+        }
+
+        const empty = createEmptyLocalState(userId, selectedYear);
+        await writeBoardStateToStore(key, empty);
+        setState(empty);
+        setLayoutItems(empty.layoutItems);
       } catch {
         setError("Не удалось загрузить локальные данные доски");
       } finally {
