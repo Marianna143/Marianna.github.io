@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import exifr from "exifr";
-import { assertBoardOwnership, getAuthenticatedUser, getPublicFileUrl, getServiceClient } from "@/lib/memory-board/server";
+import { assertBoardOwnership, getAuthenticatedUser, getPublicFileUrl, getDatabaseClient } from "@/lib/memory-board/server";
 
 const MAX_PHOTO_SIZE = 20 * 1024 * 1024;
 
@@ -51,8 +51,8 @@ export async function POST(request: Request) {
     const ext = guessExtension(file.name);
     const storagePath = `${user.id}/${Date.now()}-${randomUUID()}.${ext}`;
 
-    const service = getServiceClient();
-    const { error: uploadError } = await service.storage
+    const db = await getDatabaseClient();
+    const { error: uploadError } = await db.storage
       .from("memory-photos")
       .upload(storagePath, buffer, {
         contentType: file.type || "image/jpeg",

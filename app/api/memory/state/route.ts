@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthenticatedUser, getPublicFileUrl, getServiceClient } from "@/lib/memory-board/server";
+import { getAuthenticatedUser, getPublicFileUrl, getDatabaseClient } from "@/lib/memory-board/server";
 import type { MemoryBoardState, Sticker } from "@/lib/memory-board/types";
 
 const defaultStickers = [
-  { name: "Сердечко", emoji: "💛", color: "#f59e0b" },
-  { name: "Звезда", emoji: "⭐", color: "#facc15" },
-  { name: "Тепло", emoji: "🕯️", color: "#fb7185" },
+  { name: "Сердечко", emoji: "💚", color: "#34d399" },
+  { name: "Звезда", emoji: "⭐", color: "#6ee7b7" },
+  { name: "Тепло", emoji: "🕯️", color: "#2dd4bf" },
   { name: "Смех", emoji: "😂", color: "#22c55e" },
   { name: "Мечта", emoji: "☁️", color: "#38bdf8" },
 ] as const;
 
 async function ensureDefaultStickers(userId: string) {
-  const service = getServiceClient();
-  const { data: categories } = await service
+  const db = await getDatabaseClient();
+  const { data: categories } = await db
     .from("sticker_categories")
     .select("id")
     .eq("user_id", userId)
@@ -21,13 +21,13 @@ async function ensureDefaultStickers(userId: string) {
   let categoryId = categories?.[0]?.id ?? null;
 
   if (!categoryId) {
-    const { data: createdCategory } = await service
+    const { data: createdCategory } = await db
       .from("sticker_categories")
       .insert({
         user_id: userId,
-        name: "Милые",
-        icon: "🎀",
-        color: "#f59e0b",
+        name: "Изумрудные",
+        icon: "🍀",
+        color: "#34d399",
         sort_order: 0,
       })
       .select("id")
@@ -36,10 +36,10 @@ async function ensureDefaultStickers(userId: string) {
     categoryId = createdCategory?.id ?? null;
   }
 
-  const { data: existing } = await service.from("stickers").select("id").eq("user_id", userId).limit(1);
+  const { data: existing } = await db.from("stickers").select("id").eq("user_id", userId).limit(1);
   if (existing && existing.length > 0) return;
 
-  await service.from("stickers").insert(
+  await db.from("stickers").insert(
     defaultStickers.map((sticker, index) => ({
       user_id: userId,
       name: sticker.name,
@@ -61,14 +61,14 @@ export async function GET(request: NextRequest) {
   const parsedYear = Number(rawYear || new Date().getFullYear());
   const year = Number.isFinite(parsedYear) ? parsedYear : new Date().getFullYear();
 
-  const service = getServiceClient();
+  const db = await getDatabaseClient();
 
-  await service.from("profiles").upsert({
+  await db.from("profiles").upsert({
     user_id: user.id,
     display_name: user.user_metadata?.display_name ?? null,
   });
 
-  const { data: board, error: boardError } = await service
+  const { data: board, error: boardError } = await db
     .from("boards")
     .upsert(
       {
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 
   await ensureDefaultStickers(user.id);
 
-  const { data: entryRows } = await service
+  const { data: entryRows } = await db
     .from("day_entries")
     .select("id, board_id, date, main_event, description, created_at, updated_at")
     .eq("board_id", board.id)
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
   const [{ data: photoRows }, { data: entryStickerRows }, { data: stickerRows }, { data: categoryRows }, { data: cassetteRows }, { data: layoutRows }, { data: exportRows }] =
     await Promise.all([
       entryIds.length
-        ? service
+        ? db
             .from("entry_photos")
             .select(
               "id, entry_id, storage_path, taken_at, display_date, is_featured, booth_group, sort_order, width, height",
@@ -109,28 +109,28 @@ export async function GET(request: NextRequest) {
             .order("sort_order", { ascending: true })
         : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
       entryIds.length
-        ? service.from("entry_stickers").select("entry_id, sticker_id").in("entry_id", entryIds)
+        ? db.from("entry_stickers").select("entry_id, sticker_id").in("entry_id", entryIds)
         : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
-      service
+      db
         .from("stickers")
         .select("id, user_id, name, emoji, image_path, color, category_id, sort_order")
         .eq("user_id", user.id)
         .order("sort_order", { ascending: true }),
-      service
+      db
         .from("sticker_categories")
         .select("id, user_id, name, icon, color, sort_order")
         .eq("user_id", user.id)
         .order("sort_order", { ascending: true }),
-      service
+      db
         .from("cassettes")
         .select("id, board_id, title, audio_path, duration_sec, cover_path, x, y, rotation, z_index, created_at")
         .eq("board_id", board.id)
         .order("created_at", { ascending: true }),
-      service
+      db
         .from("board_layout_items")
         .select("item_type, ref_id, x, y, rotation, scale, z_index, pinned")
         .eq("board_id", board.id),
-      service
+      db
         .from("exports")
         .select("id, board_id, year, png_path, pdf_path, status, created_at")
         .eq("board_id", board.id)

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { assertBoardOwnership, getAuthenticatedUser, getServiceClient } from "@/lib/memory-board/server";
+import { assertBoardOwnership, getAuthenticatedUser, getDatabaseClient } from "@/lib/memory-board/server";
 
 const MAX_AUDIO_SIZE = 30 * 1024 * 1024;
 
@@ -42,8 +42,8 @@ export async function POST(request: Request) {
     const ext = guessExtension(file.name);
     const storagePath = `${user.id}/${Date.now()}-${randomUUID()}.${ext}`;
 
-    const service = getServiceClient();
-    const { error: uploadError } = await service.storage
+    const db = await getDatabaseClient();
+    const { error: uploadError } = await db.storage
       .from("memory-audio")
       .upload(storagePath, Buffer.from(await file.arrayBuffer()), {
         contentType: file.type || "audio/mpeg",

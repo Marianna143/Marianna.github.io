@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertBoardOwnership, getAuthenticatedUser, getServiceClient } from "@/lib/memory-board/server";
+import { assertBoardOwnership, getAuthenticatedUser, getDatabaseClient } from "@/lib/memory-board/server";
 import type { DayEntryPayload } from "@/lib/memory-board/types";
 
 export async function POST(request: Request) {
@@ -19,9 +19,9 @@ export async function POST(request: Request) {
 
   try {
     const board = await assertBoardOwnership(payload.boardId, user);
-    const service = getServiceClient();
+    const db = await getDatabaseClient();
 
-    const { data: dayEntry, error: dayError } = await service
+    const { data: dayEntry, error: dayError } = await db
       .from("day_entries")
       .upsert(
         {
@@ -41,10 +41,10 @@ export async function POST(request: Request) {
       throw dayError ?? new Error("Failed to upsert day entry");
     }
 
-    await service.from("entry_photos").delete().eq("entry_id", dayEntry.id);
+    await db.from("entry_photos").delete().eq("entry_id", dayEntry.id);
 
     if (payload.photos.length > 0) {
-      const { error: photosError } = await service.from("entry_photos").insert(
+      const { error: photosError } = await db.from("entry_photos").insert(
         payload.photos.map((photo, index) => ({
           entry_id: dayEntry.id,
           storage_path: photo.storagePath,
@@ -63,10 +63,10 @@ export async function POST(request: Request) {
       }
     }
 
-    await service.from("entry_stickers").delete().eq("entry_id", dayEntry.id);
+    await db.from("entry_stickers").delete().eq("entry_id", dayEntry.id);
 
     if (payload.stickerIds.length > 0) {
-      const { error: stickerError } = await service.from("entry_stickers").insert(
+      const { error: stickerError } = await db.from("entry_stickers").insert(
         payload.stickerIds.map((stickerId) => ({
           entry_id: dayEntry.id,
           sticker_id: stickerId,
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const { data: existingLayout } = await service
+    const { data: existingLayout } = await db
       .from("board_layout_items")
       .select("id")
       .eq("board_id", board.id)
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (!existingLayout) {
-      const { data: countRows } = await service
+      const { data: countRows } = await db
         .from("board_layout_items")
         .select("id")
         .eq("board_id", board.id)
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       const col = count % 6;
       const row = Math.floor(count / 6);
 
-      await service.from("board_layout_items").insert({
+      await db.from("board_layout_items").insert({
         board_id: board.id,
         item_type: "photo",
         ref_id: dayEntry.id,

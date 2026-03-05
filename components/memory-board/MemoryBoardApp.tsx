@@ -13,7 +13,6 @@ import { toPng } from "html-to-image";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   buildPhotoboothPhotos,
   getEntryCoverPhoto,
@@ -57,7 +56,7 @@ type DraggableCardProps = {
   children: React.ReactNode;
 };
 
-const FALLBACK_STICKER_COLORS = ["#f59e0b", "#22c55e", "#0ea5e9", "#f97316", "#ec4899"];
+const FALLBACK_STICKER_COLORS = ["#34d399", "#22c55e", "#0ea5e9", "#10b981", "#ec4899"];
 
 function DraggableCard({ dragId, x, y, rotation, zIndex, children }: DraggableCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: dragId });
@@ -96,7 +95,7 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryIcon, setNewCategoryIcon] = useState("📌");
-  const [newCategoryColor, setNewCategoryColor] = useState("#f59e0b");
+  const [newCategoryColor, setNewCategoryColor] = useState("#34d399");
   const [creatingCategory, setCreatingCategory] = useState(false);
 
   const [newStickerName, setNewStickerName] = useState("");
@@ -526,7 +525,7 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
     try {
       const pngDataUrl = await toPng(boardRef.current, {
         cacheBust: true,
-        backgroundColor: "#2a1c14",
+        backgroundColor: "#0b2a23",
         pixelRatio: 2,
       });
 
@@ -555,14 +554,13 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
   }
 
   async function signOut() {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    await fetch("/api/memory-auth/sign-out", { method: "POST" });
     window.location.href = "/dnewnik-cork-7g4m/auth";
   }
 
   if (loading || !state) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#140d08] text-amber-100">
+      <main className="flex min-h-screen items-center justify-center bg-[#071c18] text-emerald-100">
         Загрузка доски воспоминаний...
       </main>
     );
@@ -571,57 +569,57 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
   const selectedPhoto = modalEntry ? modalEntry.photos[modalPhotoIndex] : null;
 
   return (
-    <main className="min-h-screen bg-[#120c08] text-amber-50">
+    <main className="min-h-screen bg-[#031611] text-emerald-50">
       <div className="mx-auto grid max-w-[1800px] gap-4 px-4 pb-10 pt-6 lg:grid-cols-[360px_1fr]">
-        <aside className="rounded-2xl border border-amber-700/30 bg-[#1e140e]/85 p-4 backdrop-blur">
+        <aside className="rounded-2xl border border-emerald-700/30 bg-[#05221b]/85 p-4 backdrop-blur">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-amber-300/60">Личный кабинет</p>
-              <p className="text-sm text-amber-100/90">{userEmail}</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-emerald-300/60">Личный кабинет</p>
+              <p className="text-sm text-emerald-100/90">{userEmail}</p>
             </div>
             <button
               type="button"
               onClick={signOut}
-              className="rounded-lg border border-amber-500/40 px-3 py-1.5 text-xs hover:bg-amber-500/20"
+              className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs hover:bg-emerald-500/20"
             >
               Выйти
             </button>
           </div>
 
-          <div className="mb-4 rounded-xl border border-amber-700/30 bg-black/20 p-3">
-            <label className="text-xs uppercase tracking-[0.2em] text-amber-300/70">Год доски</label>
+          <div className="mb-4 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
+            <label className="text-xs uppercase tracking-[0.2em] text-emerald-300/70">Год доски</label>
             <input
               type="number"
               value={year}
               onChange={(event) => setYear(Number(event.target.value || new Date().getFullYear()))}
-              className="mt-2 w-full rounded-lg border border-amber-700/50 bg-[#150e0a] px-3 py-2 outline-none focus:border-amber-400"
+              className="mt-2 w-full rounded-lg border border-emerald-700/50 bg-[#041914] px-3 py-2 outline-none focus:border-emerald-400"
             />
           </div>
 
-          <section className="space-y-3 rounded-xl border border-amber-700/30 bg-black/20 p-3">
-            <h2 className="text-lg font-semibold text-amber-100">Запись дня</h2>
+          <section className="space-y-3 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
+            <h2 className="text-lg font-semibold text-emerald-100">Запись дня</h2>
             <input
               type="date"
               value={entryDate}
               onChange={(event) => setEntryDate(event.target.value)}
-              className="w-full rounded-lg border border-amber-700/50 bg-[#150e0a] px-3 py-2 outline-none focus:border-amber-400"
+              className="w-full rounded-lg border border-emerald-700/50 bg-[#041914] px-3 py-2 outline-none focus:border-emerald-400"
             />
             <input
               type="text"
               value={mainEvent}
               onChange={(event) => setMainEvent(event.target.value)}
               placeholder="Главное событие дня"
-              className="w-full rounded-lg border border-amber-700/50 bg-[#150e0a] px-3 py-2 outline-none focus:border-amber-400"
+              className="w-full rounded-lg border border-emerald-700/50 bg-[#041914] px-3 py-2 outline-none focus:border-emerald-400"
             />
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Короткая подпись к дню"
               rows={3}
-              className="w-full rounded-lg border border-amber-700/50 bg-[#150e0a] px-3 py-2 outline-none focus:border-amber-400"
+              className="w-full rounded-lg border border-emerald-700/50 bg-[#041914] px-3 py-2 outline-none focus:border-emerald-400"
             />
 
-            <label className="block rounded-lg border border-dashed border-amber-600/50 px-3 py-2 text-sm text-amber-200/80 hover:bg-amber-500/10">
+            <label className="block rounded-lg border border-dashed border-emerald-600/50 px-3 py-2 text-sm text-emerald-200/80 hover:bg-emerald-500/10">
               Загрузить фото (дата подтянется из EXIF)
               <input type="file" accept="image/*" multiple onChange={handlePhotoInput} className="mt-2 block w-full text-xs" />
             </label>
@@ -629,10 +627,10 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
             {pendingPhotos.length ? (
               <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
                 {pendingPhotos.map((photo, index) => (
-                  <div key={`${photo.storagePath}-${index}`} className="rounded-lg border border-amber-700/40 bg-black/25 p-2">
+                  <div key={`${photo.storagePath}-${index}`} className="rounded-lg border border-emerald-700/40 bg-black/25 p-2">
                     <img src={photo.url} alt="preview" className="mb-2 h-20 w-full rounded-md object-cover" />
                     <div className="grid grid-cols-2 gap-2">
-                      <label className="text-xs text-amber-100/80">
+                      <label className="text-xs text-emerald-100/80">
                         Дата кадра
                         <input
                           type="date"
@@ -649,11 +647,11 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                               ),
                             )
                           }
-                          className="mt-1 w-full rounded-md border border-amber-700/40 bg-[#170f0a] px-2 py-1 text-xs"
+                          className="mt-1 w-full rounded-md border border-emerald-700/40 bg-[#05201a] px-2 py-1 text-xs"
                         />
                       </label>
 
-                      <label className="text-xs text-amber-100/80">
+                      <label className="text-xs text-emerald-100/80">
                         Фотобудка
                         <input
                           type="text"
@@ -670,12 +668,12 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                               ),
                             )
                           }
-                          className="mt-1 w-full rounded-md border border-amber-700/40 bg-[#170f0a] px-2 py-1 text-xs"
+                          className="mt-1 w-full rounded-md border border-emerald-700/40 bg-[#05201a] px-2 py-1 text-xs"
                         />
                       </label>
                     </div>
 
-                    <label className="mt-2 flex items-center gap-2 text-xs text-amber-100/80">
+                    <label className="mt-2 flex items-center gap-2 text-xs text-emerald-100/80">
                       <input
                         type="checkbox"
                         checked={photo.isFeatured}
@@ -696,7 +694,7 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
             ) : null}
 
             <div>
-              <p className="mb-2 text-xs uppercase tracking-[0.16em] text-amber-300/70">Стикеры дня</p>
+              <p className="mb-2 text-xs uppercase tracking-[0.16em] text-emerald-300/70">Стикеры дня</p>
               <div className="flex flex-wrap gap-2">
                 {state.stickers.map((sticker) => {
                   const checked = selectedStickerIds.includes(sticker.id);
@@ -711,8 +709,8 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                       }
                       className={`rounded-lg border px-2 py-1 text-xs ${
                         checked
-                          ? "border-amber-300 bg-amber-500/30"
-                          : "border-amber-700/50 bg-black/25 hover:bg-amber-500/20"
+                          ? "border-emerald-300 bg-emerald-500/30"
+                          : "border-emerald-700/50 bg-black/25 hover:bg-emerald-500/20"
                       }`}
                     >
                       {sticker.emoji} {sticker.name}
@@ -726,38 +724,38 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
               type="button"
               onClick={saveDayEntry}
               disabled={savingEntry}
-              className="w-full rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400 disabled:opacity-60"
+              className="w-full rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-60"
             >
               {savingEntry ? "Сохраняю..." : "Сохранить день"}
             </button>
           </section>
 
-          <section className="mt-4 space-y-2 rounded-xl border border-amber-700/30 bg-black/20 p-3">
-            <h2 className="text-base font-semibold text-amber-100">Новые стикеры</h2>
+          <section className="mt-4 space-y-2 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
+            <h2 className="text-base font-semibold text-emerald-100">Новые стикеры</h2>
             <input
               value={newCategoryName}
               onChange={(event) => setNewCategoryName(event.target.value)}
               placeholder="Категория"
-              className="w-full rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-sm"
+              className="w-full rounded-md border border-emerald-700/50 bg-[#041914] px-2 py-1.5 text-sm"
             />
             <div className="grid grid-cols-3 gap-2">
               <input
                 value={newCategoryIcon}
                 onChange={(event) => setNewCategoryIcon(event.target.value)}
                 placeholder="Иконка"
-                className="rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-sm"
+                className="rounded-md border border-emerald-700/50 bg-[#041914] px-2 py-1.5 text-sm"
               />
               <input
                 value={newCategoryColor}
                 onChange={(event) => setNewCategoryColor(event.target.value)}
                 type="color"
-                className="h-9 rounded-md border border-amber-700/50 bg-[#150e0a] px-1"
+                className="h-9 rounded-md border border-emerald-700/50 bg-[#041914] px-1"
               />
               <button
                 type="button"
                 onClick={createStickerCategory}
                 disabled={creatingCategory}
-                className="rounded-md border border-amber-500/50 px-2 py-1 text-xs hover:bg-amber-500/20 disabled:opacity-60"
+                className="rounded-md border border-emerald-500/50 px-2 py-1 text-xs hover:bg-emerald-500/20 disabled:opacity-60"
               >
                 + категория
               </button>
@@ -767,25 +765,25 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
               value={newStickerName}
               onChange={(event) => setNewStickerName(event.target.value)}
               placeholder="Название стикера"
-              className="w-full rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-sm"
+              className="w-full rounded-md border border-emerald-700/50 bg-[#041914] px-2 py-1.5 text-sm"
             />
             <div className="grid grid-cols-3 gap-2">
               <input
                 value={newStickerEmoji}
                 onChange={(event) => setNewStickerEmoji(event.target.value)}
                 placeholder="Эмодзи"
-                className="rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-sm"
+                className="rounded-md border border-emerald-700/50 bg-[#041914] px-2 py-1.5 text-sm"
               />
               <input
                 value={newStickerColor}
                 onChange={(event) => setNewStickerColor(event.target.value)}
                 type="color"
-                className="h-9 rounded-md border border-amber-700/50 bg-[#150e0a] px-1"
+                className="h-9 rounded-md border border-emerald-700/50 bg-[#041914] px-1"
               />
               <select
                 value={newStickerCategoryId}
                 onChange={(event) => setNewStickerCategoryId(event.target.value)}
-                className="rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-xs"
+                className="rounded-md border border-emerald-700/50 bg-[#041914] px-2 py-1.5 text-xs"
               >
                 <option value="">Без категории</option>
                 {state.stickerCategories.map((category) => (
@@ -799,33 +797,33 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
               type="button"
               onClick={createSticker}
               disabled={creatingSticker}
-              className="w-full rounded-md border border-amber-500/50 px-2 py-1.5 text-sm hover:bg-amber-500/20 disabled:opacity-60"
+              className="w-full rounded-md border border-emerald-500/50 px-2 py-1.5 text-sm hover:bg-emerald-500/20 disabled:opacity-60"
             >
               {creatingSticker ? "Создаю..." : "Создать стикер"}
             </button>
           </section>
 
-          <section className="mt-4 rounded-xl border border-amber-700/30 bg-black/20 p-3">
-            <h2 className="mb-2 text-base font-semibold text-amber-100">Кассета</h2>
+          <section className="mt-4 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
+            <h2 className="mb-2 text-base font-semibold text-emerald-100">Кассета</h2>
             <form onSubmit={createCassette} className="space-y-2">
               <input
                 value={cassetteTitle}
                 onChange={(event) => setCassetteTitle(event.target.value)}
                 placeholder="Название трека"
-                className="w-full rounded-md border border-amber-700/50 bg-[#150e0a] px-2 py-1.5 text-sm"
+                className="w-full rounded-md border border-emerald-700/50 bg-[#041914] px-2 py-1.5 text-sm"
               />
               <input name="audio" type="file" accept="audio/*" className="w-full text-xs" />
               <button
                 type="submit"
                 disabled={savingCassette}
-                className="w-full rounded-md border border-amber-500/50 px-2 py-1.5 text-sm hover:bg-amber-500/20 disabled:opacity-60"
+                className="w-full rounded-md border border-emerald-500/50 px-2 py-1.5 text-sm hover:bg-emerald-500/20 disabled:opacity-60"
               >
                 {savingCassette ? "Загружаю..." : "Добавить кассету"}
               </button>
             </form>
           </section>
 
-          <section className="mt-4 rounded-xl border border-amber-700/30 bg-black/20 p-3">
+          <section className="mt-4 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
             <button
               type="button"
               onClick={triggerExport}
@@ -838,8 +836,8 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
             {state.exports.length ? (
               <div className="mt-3 space-y-2 text-xs">
                 {state.exports.slice(0, 3).map((item) => (
-                  <div key={item.id} className="rounded-md border border-amber-700/30 p-2">
-                    <p className="text-amber-100/80">
+                  <div key={item.id} className="rounded-md border border-emerald-700/30 p-2">
+                    <p className="text-emerald-100/80">
                       {format(new Date(item.created_at), "d MMM HH:mm", { locale: ru })} · {item.status}
                     </p>
                     <div className="mt-1 flex gap-3">
@@ -857,17 +855,17 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
           </section>
 
           {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
-          {savingLayout ? <p className="mt-2 text-xs text-amber-200/70">Сохраняю раскладку...</p> : null}
+          {savingLayout ? <p className="mt-2 text-xs text-emerald-200/70">Сохраняю раскладку...</p> : null}
         </aside>
 
-        <section className="min-h-[80vh] rounded-2xl border border-amber-700/30 bg-[#2a1c14] p-4">
+        <section className="min-h-[80vh] rounded-2xl border border-emerald-700/30 bg-[#0d2b24] p-4">
           <div
             ref={boardRef}
-            className="relative min-h-[1200px] overflow-hidden rounded-xl border border-amber-700/20"
+            className="relative min-h-[1200px] overflow-hidden rounded-xl border border-emerald-700/20"
             style={{
               backgroundImage:
-                "radial-gradient(circle at 20% 0%, rgba(255,205,112,0.11), transparent 42%), repeating-linear-gradient(45deg, rgba(102,66,42,0.35) 0 8px, rgba(115,76,48,0.28) 8px 16px)",
-              backgroundColor: "#5a3c2a",
+                "radial-gradient(circle at 20% 0%, rgba(110,231,183,0.17), transparent 42%), repeating-linear-gradient(45deg, rgba(16,75,61,0.45) 0 8px, rgba(10,57,46,0.42) 8px 16px)",
+              backgroundColor: "#1f4b3f",
             }}
           >
             <div className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay">
@@ -877,12 +875,12 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
             <div className="pointer-events-none absolute left-0 right-0 top-1 z-10 flex items-start justify-around px-4">
               {Array.from({ length: 18 }).map((_, index) => (
                 <div key={`lamp-${index}`} className="relative h-9 w-3">
-                  <div className="absolute left-1/2 top-0 h-3 w-[2px] -translate-x-1/2 bg-amber-900" />
+                  <div className="absolute left-1/2 top-0 h-3 w-[2px] -translate-x-1/2 bg-emerald-900" />
                   <div
                     className="absolute left-1/2 top-2 h-4 w-3 -translate-x-1/2 rounded-full"
                     style={{
-                      background: "radial-gradient(circle at 50% 35%, #fff7c5, #f59e0b)",
-                      boxShadow: "0 0 10px rgba(255,209,102,0.6)",
+                      background: "radial-gradient(circle at 50% 35%, #ecfeff, #34d399)",
+                      boxShadow: "0 0 10px rgba(16,185,129,0.62)",
                       animation: `pulse ${2 + (index % 3) * 0.5}s ease-in-out infinite`,
                     }}
                   />
@@ -912,8 +910,8 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                       }}
                       className="relative block w-[150px] rounded-sm bg-white p-2 pb-7 text-left shadow-[0_14px_25px_rgba(0,0,0,0.35)]"
                     >
-                      <div className="absolute -top-3 left-1/2 z-10 h-6 w-5 -translate-x-1/2 rounded-t bg-amber-700 shadow">
-                        <div className="absolute left-1/2 top-1 h-2 w-2 -translate-x-1/2 rounded-full bg-amber-500" />
+                      <div className="absolute -top-3 left-1/2 z-10 h-6 w-5 -translate-x-1/2 rounded-t bg-emerald-700 shadow">
+                        <div className="absolute left-1/2 top-1 h-2 w-2 -translate-x-1/2 rounded-full bg-emerald-500" />
                       </div>
 
                       {card.photos.length > 1 ? (
@@ -959,7 +957,7 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                       zIndex={item.zIndex}
                     >
                       <div
-                        className="grid h-20 w-20 place-items-center rounded-xl border border-amber-200/20 text-4xl shadow-[0_9px_16px_rgba(0,0,0,0.35)]"
+                        className="grid h-20 w-20 place-items-center rounded-xl border border-emerald-200/20 text-4xl shadow-[0_9px_16px_rgba(0,0,0,0.35)]"
                         style={{ backgroundColor: `${sticker.color}88` }}
                         title={sticker.name}
                       >
@@ -982,9 +980,9 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                     rotation={layout.rotation}
                     zIndex={layout.zIndex}
                   >
-                    <div className="w-56 rounded-xl border border-amber-500/30 bg-[#20140f]/90 p-3 shadow-2xl">
-                      <p className="mb-2 text-xs uppercase tracking-[0.25em] text-amber-200/70">Cassette</p>
-                      <p className="mb-2 text-sm font-semibold text-amber-100">{cassette.title}</p>
+                    <div className="w-56 rounded-xl border border-emerald-500/30 bg-[#052119]/90 p-3 shadow-2xl">
+                      <p className="mb-2 text-xs uppercase tracking-[0.25em] text-emerald-200/70">Cassette</p>
+                      <p className="mb-2 text-sm font-semibold text-emerald-100">{cassette.title}</p>
                       <audio controls src={cassette.audio_url} className="h-8 w-full" preload="metadata" />
                     </div>
                   </DraggableCard>
@@ -1010,7 +1008,7 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                     pinned: true,
                   })
                 }
-                className="rounded-md border border-amber-600/50 bg-black/25 px-2 py-1 text-xs hover:bg-amber-500/20"
+                className="rounded-md border border-emerald-600/50 bg-black/25 px-2 py-1 text-xs hover:bg-emerald-500/20"
               >
                 Приклеить: {sticker.emoji} {sticker.name}
               </button>
@@ -1022,20 +1020,20 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
       {modalEntry && selectedPhoto ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-4" onClick={() => setModalEntry(null)}>
           <div
-            className="max-w-2xl rounded-2xl border border-amber-500/30 bg-[#18100c] p-4"
+            className="max-w-2xl rounded-2xl border border-emerald-500/30 bg-[#052019] p-4"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-amber-300/70">Подпись дня</p>
-                <h3 className="text-xl text-amber-100">
+                <p className="text-xs uppercase tracking-[0.22em] text-emerald-300/70">Подпись дня</p>
+                <h3 className="text-xl text-emerald-100">
                   {format(new Date(modalEntry.date), "d MMMM yyyy", { locale: ru })}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setModalEntry(null)}
-                className="rounded-md border border-amber-600/50 px-3 py-1 text-xs hover:bg-amber-500/20"
+                className="rounded-md border border-emerald-600/50 px-3 py-1 text-xs hover:bg-emerald-500/20"
               >
                 Закрыть
               </button>
@@ -1051,18 +1049,18 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
                     prev === 0 ? modalEntry.photos.length - 1 : prev - 1,
                   )
                 }
-                className="rounded-md border border-amber-600/50 px-3 py-1 text-xs hover:bg-amber-500/20"
+                className="rounded-md border border-emerald-600/50 px-3 py-1 text-xs hover:bg-emerald-500/20"
               >
                 Назад
               </button>
-              <p className="text-sm text-amber-100/85">
+              <p className="text-sm text-emerald-100/85">
                 {modalEntry.main_event || "Без заголовка"}
                 {modalEntry.description ? ` — ${modalEntry.description}` : ""}
               </p>
               <button
                 type="button"
                 onClick={() => setModalPhotoIndex((prev) => (prev + 1) % modalEntry.photos.length)}
-                className="rounded-md border border-amber-600/50 px-3 py-1 text-xs hover:bg-amber-500/20"
+                className="rounded-md border border-emerald-600/50 px-3 py-1 text-xs hover:bg-emerald-500/20"
               >
                 Вперёд
               </button>

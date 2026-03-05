@@ -1,4 +1,5 @@
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { getSupabaseClientEnv, hasSupabaseServiceRoleEnv } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -16,19 +17,30 @@ export async function getAuthenticatedUser() {
   return user;
 }
 
-export function getServiceClient() {
-  return getSupabaseServiceClient();
+export async function getDatabaseClient(): Promise<SupabaseClient> {
+  if (hasSupabaseServiceRoleEnv()) {
+    return getSupabaseServiceClient();
+  }
+
+  return getSupabaseServerClient();
+}
+
+function encodeStoragePath(path: string) {
+  return path
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
 }
 
 export function getPublicFileUrl(bucket: string, path: string) {
-  const client = getSupabaseServiceClient();
-  const { data } = client.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
+  const { url } = getSupabaseClientEnv();
+  return `${url}/storage/v1/object/public/${bucket}/${encodeStoragePath(path)}`;
 }
 
-export async function assertBoardOwnership(boardId: string, user: User) {
-  const service = getSupabaseServiceClient();
-  const { data, error } = await service
+export async function assertBoardOwnership(boardId: string, user: User, client?: SupabaseClient) {
+  const db = client ?? (await getDatabaseClient());
+
+  const { data, error } = await db
     .from("boards")
     .select("id, user_id, year, title, created_at, updated_at")
     .eq("id", boardId)

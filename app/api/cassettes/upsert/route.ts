@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertBoardOwnership, getAuthenticatedUser, getServiceClient } from "@/lib/memory-board/server";
+import { assertBoardOwnership, getAuthenticatedUser, getDatabaseClient } from "@/lib/memory-board/server";
 
 type RequestBody = {
   boardId: string;
@@ -24,16 +24,16 @@ export async function POST(request: Request) {
 
   try {
     const board = await assertBoardOwnership(body.boardId, user);
-    const service = getServiceClient();
+    const db = await getDatabaseClient();
 
-    const { data: countRows } = await service
+    const { data: countRows } = await db
       .from("cassettes")
       .select("id")
       .eq("board_id", board.id);
 
     const count = countRows?.length || 0;
 
-    const { data, error } = await service
+    const { data, error } = await db
       .from("cassettes")
       .insert({
         board_id: board.id,

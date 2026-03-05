@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertBoardOwnership, getAuthenticatedUser, getServiceClient } from "@/lib/memory-board/server";
+import { assertBoardOwnership, getAuthenticatedUser, getDatabaseClient } from "@/lib/memory-board/server";
 import type { LayoutItem } from "@/lib/memory-board/types";
 
 type RequestBody = {
@@ -22,9 +22,9 @@ export async function POST(request: Request) {
 
   try {
     const board = await assertBoardOwnership(body.boardId, user);
-    const service = getServiceClient();
+    const db = await getDatabaseClient();
 
-    await service.from("board_layout_items").delete().eq("board_id", board.id);
+    await db.from("board_layout_items").delete().eq("board_id", board.id);
 
     if (body.items.length > 0) {
       const rows = body.items
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         }));
 
       if (rows.length > 0) {
-        const { error: insertError } = await service.from("board_layout_items").insert(rows);
+        const { error: insertError } = await db.from("board_layout_items").insert(rows);
         if (insertError) {
           throw insertError;
         }

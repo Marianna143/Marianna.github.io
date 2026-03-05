@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser, getPublicFileUrl, getServiceClient } from "@/lib/memory-board/server";
+import { getAuthenticatedUser, getPublicFileUrl, getDatabaseClient } from "@/lib/memory-board/server";
 
 export async function GET(_: Request, context: { params: Promise<{ id: string }> }) {
   const user = await getAuthenticatedUser();
@@ -12,9 +12,9 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
     return NextResponse.json({ error: "Export id is required" }, { status: 400 });
   }
 
-  const service = getServiceClient();
+  const db = await getDatabaseClient();
 
-  const { data: exportRow, error } = await service
+  const { data: exportRow, error } = await db
     .from("exports")
     .select("id, board_id, year, png_path, pdf_path, status, created_at, boards!inner(id, user_id)")
     .eq("id", id)

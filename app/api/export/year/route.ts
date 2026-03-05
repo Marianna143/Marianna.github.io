@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
-import { assertBoardOwnership, getAuthenticatedUser, getServiceClient } from "@/lib/memory-board/server";
+import { assertBoardOwnership, getAuthenticatedUser, getDatabaseClient } from "@/lib/memory-board/server";
 
 type RequestBody = {
   boardId: string;
@@ -32,14 +32,14 @@ export async function POST(request: Request) {
 
   try {
     const board = await assertBoardOwnership(body.boardId, user);
-    const service = getServiceClient();
+    const db = await getDatabaseClient();
 
     const pngBytes = decodeDataUrl(body.pngDataUrl);
     const exportId = randomUUID();
     const pngPath = `${user.id}/${board.year}/${exportId}.png`;
     const pdfPath = `${user.id}/${board.year}/${exportId}.pdf`;
 
-    const { error: pngError } = await service.storage.from("memory-exports").upload(pngPath, pngBytes, {
+    const { error: pngError } = await db.storage.from("memory-exports").upload(pngPath, pngBytes, {
       contentType: "image/png",
       upsert: false,
     });
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
     const pdfBytes = Buffer.from(await pdf.save());
 
-    const { error: pdfError } = await service.storage.from("memory-exports").upload(pdfPath, pdfBytes, {
+    const { error: pdfError } = await db.storage.from("memory-exports").upload(pdfPath, pdfBytes, {
       contentType: "application/pdf",
       upsert: false,
     });
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       throw pdfError;
     }
 
-    const { data: createdExport, error: exportError } = await service
+    const { data: createdExport, error: exportError } = await db
       .from("exports")
       .insert({
         board_id: board.id,

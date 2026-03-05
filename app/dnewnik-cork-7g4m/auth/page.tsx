@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function MemoryAuthPage() {
   const router = useRouter();
@@ -15,10 +14,7 @@ export default function MemoryAuthPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const isSupabaseConfigured =
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -26,13 +22,35 @@ export default function MemoryAuthPage() {
     if (next) {
       setNextPath(next);
     }
+
+    let active = true;
+
+    async function checkConfig() {
+      try {
+        const response = await fetch("/api/memory-auth/config", { cache: "no-store" });
+        const payload = (await response.json().catch(() => null)) as { configured?: boolean } | null;
+        if (active) {
+          setIsConfigured(Boolean(payload?.configured));
+        }
+      } catch {
+        if (active) {
+          setIsConfigured(false);
+        }
+      }
+    }
+
+    void checkConfig();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!isSupabaseConfigured) {
-      setError("Supabase ENV не настроен на проде. Добавьте переменные в Vercel Project Settings → Environment Variables.");
+    if (isConfigured === false) {
+      setError("Supabase пока не подключен на проде. Нужны env-переменные в Vercel.");
       return;
     }
 
@@ -41,30 +59,35 @@ export default function MemoryAuthPage() {
     setMessage(null);
 
     try {
+      const endpoint = mode === "sign-in" ? "/api/memory-auth/sign-in" : "/api/memory-auth/sign-up";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          displayName,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Ошибка авторизации");
+      }
+
       if (mode === "sign-in") {
-        const supabase = getSupabaseBrowserClient();
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) throw signInError;
         router.push(nextPath);
         router.refresh();
         return;
       }
 
-      const supabase = getSupabaseBrowserClient();
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            display_name: displayName.trim() || null,
-          },
-          emailRedirectTo: `${window.location.origin}/dnewnik-cork-7g4m`,
-        },
-      });
-
-      if (signUpError) throw signUpError;
-      setMessage("Аккаунт создан. Если подтверждение по email включено, подтвердите почту и войдите.");
+      setMessage("Аккаунт создан. Если включено подтверждение email, подтвердите почту и войдите.");
       setMode("sign-in");
+      setPassword("");
     } catch (submitError) {
       const text = submitError instanceof Error ? submitError.message : "Ошибка авторизации";
       setError(text);
@@ -73,29 +96,37 @@ export default function MemoryAuthPage() {
     }
   }
 
-  return (
-    <main className="min-h-screen bg-[#0f0a07] px-6 py-10 text-white">
-      <div className="mx-auto max-w-md rounded-3xl border border-amber-700/30 bg-black/35 p-7 backdrop-blur-sm">
-        <p className="mb-2 text-sm uppercase tracking-[0.3em] text-amber-300/70">Секретная страница</p>
-        <h1 className="mb-6 text-3xl font-semibold text-amber-100">Дневник Воспоминаний</h1>
+  const submitDisabled = loading || isConfigured === false;
 
-        {!isSupabaseConfigured ? (
-          <div className="mb-4 rounded-xl border border-rose-400/40 bg-rose-900/25 p-3 text-sm text-rose-200">
-            Supabase ENV пока не настроен на проде.
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-[#02130f] px-6 py-10 text-emerald-50">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.25),transparent_40%),radial-gradient(circle_at_80%_15%,rgba(20,184,166,0.2),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(6,95,70,0.45),transparent_60%)]" />
+
+      <div className="relative mx-auto max-w-md rounded-3xl border border-emerald-400/30 bg-[#03261f]/80 p-7 shadow-[0_24px_80px_rgba(4,35,29,0.65)] backdrop-blur-md">
+        <p className="mb-2 text-sm uppercase tracking-[0.3em] text-emerald-200/70">Личный вход</p>
+        <h1 className="mb-6 text-3xl font-semibold text-emerald-50">Дневник Воспоминаний</h1>
+
+        {isConfigured === false ? (
+          <div className="mb-4 rounded-xl border border-rose-300/40 bg-rose-900/30 p-3 text-sm text-rose-100">
+            Supabase ENV не найден в проде. Добавьте `SUPABASE_URL` + `SUPABASE_ANON_KEY` (или `NEXT_PUBLIC_*`) и `SUPABASE_SERVICE_ROLE_KEY`.
           </div>
         ) : null}
 
-        <div className="mb-6 flex gap-2 rounded-xl border border-amber-700/40 bg-[#1d130d] p-1">
+        <div className="mb-6 flex gap-2 rounded-xl border border-emerald-500/40 bg-[#062f26] p-1">
           <button
             type="button"
-            className={`w-full rounded-lg px-3 py-2 text-sm ${mode === "sign-in" ? "bg-amber-600 text-black" : "text-amber-100/70"}`}
+            className={`w-full rounded-lg px-3 py-2 text-sm transition ${
+              mode === "sign-in" ? "bg-emerald-400 text-emerald-950" : "text-emerald-100/75 hover:bg-emerald-500/20"
+            }`}
             onClick={() => setMode("sign-in")}
           >
             Вход
           </button>
           <button
             type="button"
-            className={`w-full rounded-lg px-3 py-2 text-sm ${mode === "sign-up" ? "bg-amber-600 text-black" : "text-amber-100/70"}`}
+            className={`w-full rounded-lg px-3 py-2 text-sm transition ${
+              mode === "sign-up" ? "bg-emerald-400 text-emerald-950" : "text-emerald-100/75 hover:bg-emerald-500/20"
+            }`}
             onClick={() => setMode("sign-up")}
           >
             Регистрация
@@ -104,31 +135,31 @@ export default function MemoryAuthPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "sign-up" ? (
-            <label className="block text-sm text-amber-100/85">
+            <label className="block text-sm text-emerald-100/90">
               Имя
               <input
                 type="text"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                className="mt-2 w-full rounded-xl border border-amber-700/50 bg-[#140d09] px-3 py-2 text-amber-50 outline-none focus:border-amber-400"
+                className="mt-2 w-full rounded-xl border border-emerald-600/45 bg-[#041e18] px-3 py-2 text-emerald-50 outline-none focus:border-emerald-300"
                 placeholder="Как вас подписать"
               />
             </label>
           ) : null}
 
-          <label className="block text-sm text-amber-100/85">
+          <label className="block text-sm text-emerald-100/90">
             Email
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-amber-700/50 bg-[#140d09] px-3 py-2 text-amber-50 outline-none focus:border-amber-400"
+              className="mt-2 w-full rounded-xl border border-emerald-600/45 bg-[#041e18] px-3 py-2 text-emerald-50 outline-none focus:border-emerald-300"
               placeholder="you@example.com"
             />
           </label>
 
-          <label className="block text-sm text-amber-100/85">
+          <label className="block text-sm text-emerald-100/90">
             Пароль
             <input
               type="password"
@@ -136,18 +167,18 @@ export default function MemoryAuthPage() {
               onChange={(event) => setPassword(event.target.value)}
               required
               minLength={6}
-              className="mt-2 w-full rounded-xl border border-amber-700/50 bg-[#140d09] px-3 py-2 text-amber-50 outline-none focus:border-amber-400"
+              className="mt-2 w-full rounded-xl border border-emerald-600/45 bg-[#041e18] px-3 py-2 text-emerald-50 outline-none focus:border-emerald-300"
               placeholder="Минимум 6 символов"
             />
           </label>
 
           {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-          {message ? <p className="text-sm text-emerald-300">{message}</p> : null}
+          {message ? <p className="text-sm text-emerald-200">{message}</p> : null}
 
           <button
             type="submit"
-            disabled={loading || !isSupabaseConfigured}
-            className="w-full rounded-xl bg-amber-500 px-4 py-2.5 font-medium text-black transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={submitDisabled}
+            className="w-full rounded-xl bg-emerald-400 px-4 py-2.5 font-medium text-emerald-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Подождите..." : mode === "sign-in" ? "Войти" : "Создать аккаунт"}
           </button>

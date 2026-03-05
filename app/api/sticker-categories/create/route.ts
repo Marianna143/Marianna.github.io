@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser, getServiceClient } from "@/lib/memory-board/server";
+import { getAuthenticatedUser, getDatabaseClient } from "@/lib/memory-board/server";
 
 type RequestBody = {
   name: string;
@@ -18,20 +18,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
 
-  const service = getServiceClient();
+  const db = await getDatabaseClient();
 
-  const { data: existing } = await service
+  const { data: existing } = await db
     .from("sticker_categories")
     .select("id")
     .eq("user_id", user.id);
 
-  const { data, error } = await service
+  const { data, error } = await db
     .from("sticker_categories")
     .insert({
       user_id: user.id,
       name: body.name.trim(),
-      icon: body.icon?.trim() || "📌",
-      color: body.color || "#f59e0b",
+      icon: body.icon?.trim() || "🍀",
+      color: body.color || "#34d399",
       sort_order: existing?.length || 0,
     })
     .select("id")
