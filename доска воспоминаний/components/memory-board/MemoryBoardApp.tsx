@@ -88,6 +88,19 @@ type AppleResolvedTrack = {
   embedUrl: string;
 };
 
+function layoutKey(item: Pick<LayoutItem, "itemType" | "refId">) {
+  return `${item.itemType}:${item.refId}`;
+}
+
+function toLayoutArray(items: Iterable<LayoutItem>) {
+  const map = new Map<string, LayoutItem>();
+  for (const item of items) {
+    map.set(layoutKey(item), item);
+  }
+
+  return [...map.values()].sort((a, b) => layoutKey(a).localeCompare(layoutKey(b)));
+}
+
 function formatDuration(seconds: number | null) {
   if (!seconds || seconds < 0) return "00:00";
   const min = Math.floor(seconds / 60);
@@ -179,6 +192,8 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queuedAutoPlayRef = useRef(false);
   const newlyCreatedCassetteIdRef = useRef<string | null>(null);
+  const pendingLayoutSaveRef = useRef<{ boardId: string; items: LayoutItem[] } | null>(null);
+  const isSavingLayoutRef = useRef(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -816,19 +831,21 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
     cueCassette(state.cassettes[nextIndex].id, true);
   }
 
-  async function saveLayout(nextItems: LayoutItem[]) {
-    if (!state) return;
+  const flushLayoutQueue = useCallback(async () => {
+    if (isSavingLayoutRef.current) return;
 
+    const nextSave = pendingLayoutSaveRef.current;
+    if (!nextSave) return;
+
+    pendingLayoutSaveRef.current = null;
+    isSavingLayoutRef.current = true;
     setSavingLayout(true);
 
     try {
       const response = await fetch("/api/layout/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          boardId: state.board.id,
-          items: nextItems,
-        }),
+        body: JSON.stringify(nextSave),
       });
 
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -839,19 +856,32 @@ export default function MemoryBoardApp({ userEmail }: { userEmail: string }) {
       const text = layoutError instanceof Error ? layoutError.message : "Ошибка сохранения раскладки";
       setError(text);
     } finally {
-      setSavingLayout(false);
+      isSavingLayoutRef.current = false;
+      if (pendingLayoutSaveRef.current) {
+        void flushLayoutQueue();
+      } else {
+        setSavingLayout(false);
+      }
     }
-  }
+  }, []);
+
+  const queueLayoutSave = useCallback((boardId: string, items: LayoutItem[]) => {
+    pendingLayoutSaveRef.current = {
+      boardId,
+      items: toLayoutArray(items).map((item) => ({ ...item })),
+    };
+    void flushLayoutQueue();
+  }, [flushLayoutQueue]);
 
   function upsertLocalLayout(nextItem: LayoutItem) {
-    setLayoutItems((prev) => {
-      const without = prev.filter(
-        (item) => !(item.itemType === nextItem.itemType && item.refId === nextItem.refId),
-      );
-      const next = [...without, nextItem];
-      void saveLayout(next);
-      return next;
-    });
+    if (!state) return;
+
+    const nextMap = new Map(layoutByKey);
+    nextMap.set(layoutKey(nextItem), nextItem);
+
+    const next = toLayoutArray(nextMap.values());
+    setLayoutItems(next);
+    queueLayoutSave(state.board.id, next);
   }
 
   function onDragEnd(event: DragEndEvent) {

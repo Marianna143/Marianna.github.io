@@ -24,8 +24,6 @@ export async function POST(request: Request) {
     const board = await assertBoardOwnership(body.boardId, user);
     const service = getServiceClient();
 
-    await service.from("board_layout_items").delete().eq("board_id", board.id);
-
     if (body.items.length > 0) {
       const rows = body.items
         .filter((item) => validTypes.has(item.itemType))
@@ -42,7 +40,9 @@ export async function POST(request: Request) {
         }));
 
       if (rows.length > 0) {
-        const { error: insertError } = await service.from("board_layout_items").insert(rows);
+        const { error: insertError } = await service.from("board_layout_items").upsert(rows, {
+          onConflict: "board_id,item_type,ref_id",
+        });
         if (insertError) {
           throw insertError;
         }
