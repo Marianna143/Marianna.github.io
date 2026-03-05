@@ -20,6 +20,7 @@ import {
   randomTilt,
   toIsoDate,
 } from "@/lib/memory-board/helpers";
+import { readBoardStateFromStore, writeBoardStateToStore } from "@/lib/memory-board/local-store";
 import type {
   LayoutItem,
   MemoryBoardState,
@@ -27,7 +28,6 @@ import type {
   MemoryEntryPhoto,
   Sticker,
 } from "@/lib/memory-board/types";
-import { readBoardStateFromStore, writeBoardStateToStore } from "@/lib/memory-board/local-store";
 
 type PendingPhoto = {
   storagePath: string;
@@ -57,11 +57,33 @@ type DraggableCardProps = {
   children: React.ReactNode;
 };
 
+type GarlandLine = {
+  top: number;
+  tilt: number;
+  bulbs: number;
+};
+
 const FALLBACK_STICKER_COLORS = ["#34d399", "#22c55e", "#0ea5e9", "#10b981", "#ec4899"];
+const BOOTH_FRAME_PRESETS = ["#fffdf8", "#fef3c7", "#d1fae5", "#cffafe", "#fee2e2", "#e9d5ff"];
+const GARLAND_LINES: GarlandLine[] = [
+  { top: 126, tilt: -4.5, bulbs: 30 },
+  { top: 238, tilt: 3.5, bulbs: 28 },
+  { top: 350, tilt: -5, bulbs: 30 },
+  { top: 464, tilt: 2.6, bulbs: 26 },
+];
+
 const LOCAL_SESSION_KEY = "memory_local_session";
 const LOCAL_BOARD_STORAGE_PREFIX = "memory-board-local-v2";
 const LEGACY_LOCAL_STORAGE_PREFIX = "memory-board-local-v1";
 const LOCAL_CATEGORY_ID = "local-category-main";
+
+const BOARD_WIDTH = 3600;
+const BOARD_MIN_HEIGHT = 2600;
+const BOARD_COLUMNS = 14;
+const PHOTO_GRID_X_STEP = 236;
+const PHOTO_GRID_Y_STEP = 328;
+const BOARD_PADDING_X = 90;
+const BOARD_PADDING_TOP = 570;
 
 function localId(prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -77,6 +99,10 @@ function boardStorageKey(userId: string, year: number) {
 
 function legacyLocalStorageKey(userId: string, year: number) {
   return `${LEGACY_LOCAL_STORAGE_PREFIX}:${userId}:${year}`;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function createEmptyLocalState(userId: string, selectedYear: number): MemoryBoardState {
@@ -189,6 +215,67 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+async function loadImageFromDataUrl(dataUrl: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Не удалось обработать изображение"));
+    image.src = dataUrl;
+  });
+}
+
+async function optimizeImageForBoard(file: File) {
+  const sourceDataUrl = await fileToDataUrl(file);
+
+  if (!file.type.startsWith("image/")) {
+    return {
+      dataUrl: sourceDataUrl,
+      width: null,
+      height: null,
+    };
+  }
+
+  try {
+    const image = await loadImageFromDataUrl(sourceDataUrl);
+    const maxSide = 2048;
+    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+
+    const targetWidth = Math.max(1, Math.round(image.width * scale));
+    const targetHeight = Math.max(1, Math.round(image.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const context = canvas.getContext("2d", { alpha: false });
+    if (!context) {
+      return {
+        dataUrl: sourceDataUrl,
+        width: image.width,
+        height: image.height,
+      };
+    }
+
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    const isPng = file.type === "image/png";
+    const mimeType = isPng ? "image/png" : "image/jpeg";
+    const quality = isPng ? undefined : 0.86;
+
+    return {
+      dataUrl: canvas.toDataURL(mimeType, quality),
+      width: targetWidth,
+      height: targetHeight,
+    };
+  } catch {
+    return {
+      dataUrl: sourceDataUrl,
+      width: null,
+      height: null,
+    };
+  }
+}
+
 function decodeDataUrl(dataUrl: string) {
   const comma = dataUrl.indexOf(",");
   if (comma === -1) {
@@ -233,9 +320,13 @@ function DraggableCard({ dragId, x, y, rotation, zIndex, children }: DraggableCa
     left: x,
     top: y,
     zIndex: isDragging ? 999 : zIndex,
-    transform: CSS.Translate.toString(transform) + ` rotate(${rotation}deg)`,
+    transform: `${CSS.Translate.toString(transform)} rotate(${rotation}deg)`,
     touchAction: "none",
     cursor: isDragging ? "grabbing" : "grab",
+    transition: isDragging
+      ? "none"
+      : "left 0.22s cubic-bezier(0.2, 0.72, 0.12, 1), top 0.22s cubic-bezier(0.2, 0.72, 0.12, 1)",
+    willChange: isDragging ? "transform" : "left, top",
   };
 
   return (
@@ -258,6 +349,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
   const [description, setDescription] = useState("");
   const [selectedStickerIds, setSelectedStickerIds] = useState<string[]>([]);
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
+  const [boothFrameColor, setBoothFrameColor] = useState(BOOTH_FRAME_PRESETS[0]);
   const [savingEntry, setSavingEntry] = useState(false);
 
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -282,7 +374,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
 
   const [exporting, setExporting] = useState(false);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const persistState = useCallback(
     (nextState: MemoryBoardState) => {
@@ -363,6 +455,18 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     return map;
   }, [state]);
 
+  const boardDimensions = useMemo(() => {
+    const rows = Math.ceil((Math.max(cards.length, 1) + 10) / BOARD_COLUMNS);
+    const autoGridHeight = BOARD_PADDING_TOP + rows * PHOTO_GRID_Y_STEP + 420;
+    const maxLayoutY =
+      layoutItems.reduce((max, item) => Math.max(max, item.y), 0) + 560;
+
+    return {
+      width: BOARD_WIDTH,
+      height: Math.max(BOARD_MIN_HEIGHT, autoGridHeight, maxLayoutY),
+    };
+  }, [cards.length, layoutItems]);
+
   const layoutByKey = useMemo(() => {
     const map = new Map<string, LayoutItem>();
     layoutItems.forEach((item) => {
@@ -372,16 +476,16 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     cards.forEach((card, index) => {
       const key = `photo:${card.entry.id}`;
       if (!map.has(key)) {
-        const row = Math.floor(index / 6);
-        const col = index % 6;
+        const row = Math.floor(index / BOARD_COLUMNS);
+        const col = index % BOARD_COLUMNS;
         map.set(key, {
           itemType: "photo",
           refId: card.entry.id,
-          x: 70 + col * 180,
-          y: 140 + row * 260,
+          x: BOARD_PADDING_X + col * PHOTO_GRID_X_STEP,
+          y: BOARD_PADDING_TOP + row * PHOTO_GRID_Y_STEP,
           rotation: randomTilt(card.entry.id),
           scale: 1,
-          zIndex: 20 + index,
+          zIndex: 40 + index,
           pinned: true,
         });
       }
@@ -393,18 +497,18 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
         map.set(key, {
           itemType: "cassette",
           refId: cassette.id,
-          x: cassette.x ?? 90 + index * 140,
-          y: cassette.y ?? 920,
+          x: cassette.x ?? 120 + index * 180,
+          y: cassette.y ?? boardDimensions.height - 240,
           rotation: cassette.rotation ?? randomTilt(cassette.id),
           scale: 1,
-          zIndex: cassette.z_index || 200,
+          zIndex: cassette.z_index || 300,
           pinned: true,
         });
       }
     });
 
     return map;
-  }, [cards, layoutItems, state]);
+  }, [boardDimensions.height, cards, layoutItems, state]);
 
   async function uploadPhoto(file: File): Promise<PendingPhoto> {
     const buffer = await file.arrayBuffer();
@@ -416,18 +520,18 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     const takenAt = takenDate instanceof Date ? takenDate.toISOString() : null;
 
     const defaultDate = takenAt ? takenAt.slice(0, 10) : entryDate;
-    const url = await fileToDataUrl(file);
+    const optimized = await optimizeImageForBoard(file);
 
     return {
       storagePath: localId("photo"),
-      url,
+      url: optimized.dataUrl,
       takenAt,
       displayDate: defaultDate,
       isFeatured: false,
       boothGroup: `${entryDate}-booth`,
       sortOrder: 0,
-      width: metadata?.ExifImageWidth ?? metadata?.ImageWidth ?? null,
-      height: metadata?.ExifImageHeight ?? metadata?.ImageHeight ?? null,
+      width: metadata?.ExifImageWidth ?? metadata?.ImageWidth ?? optimized.width ?? null,
+      height: metadata?.ExifImageHeight ?? metadata?.ImageHeight ?? optimized.height ?? null,
     };
   }
 
@@ -455,6 +559,18 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     }
   }
 
+  function removePendingPhoto(index: number) {
+    setPendingPhotos((prev) => {
+      const next = prev.filter((_, currentIndex) => currentIndex !== index).map((photo, nextIndex) => ({
+        ...photo,
+        sortOrder: nextIndex,
+        isFeatured: nextIndex === 0,
+      }));
+
+      return next;
+    });
+  }
+
   async function saveDayEntry() {
     if (!state) return;
 
@@ -466,7 +582,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
       const existing = state.entries.find((entry) => entry.date === entryDate);
       const entryId = existing?.id ?? localId("entry");
 
-      const photos = pendingPhotos.map((photo, index) => ({
+      const nextPhotos = pendingPhotos.map((photo, index) => ({
         id: localId("photo-item"),
         entry_id: entryId,
         storage_path: photo.storagePath,
@@ -475,21 +591,36 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
         display_date: photo.displayDate,
         is_featured: photo.isFeatured || index === 0,
         booth_group: photo.boothGroup,
-        sort_order: index,
+        sort_order: (existing?.photos.length ?? 0) + index,
         width: photo.width,
         height: photo.height,
       }));
+
+      const mergedPhotos = [...(existing?.photos ?? []), ...nextPhotos]
+        .map((photo, index) => ({
+          ...photo,
+          sort_order: index,
+        }))
+        .map((photo, index) => ({
+          ...photo,
+          is_featured: index === 0,
+        }));
+
+      const mergedStickerIds = selectedStickerIds.length
+        ? selectedStickerIds
+        : existing?.sticker_ids ?? [];
 
       const nextEntry: MemoryDayEntry = {
         id: entryId,
         board_id: state.board.id,
         date: entryDate,
-        main_event: mainEvent || null,
-        description: description || null,
+        main_event: mainEvent || existing?.main_event || null,
+        description: description || existing?.description || null,
+        booth_frame_color: boothFrameColor,
         created_at: existing?.created_at ?? now,
         updated_at: now,
-        photos,
-        sticker_ids: selectedStickerIds,
+        photos: mergedPhotos,
+        sticker_ids: mergedStickerIds,
       };
 
       const entriesWithoutDay = state.entries.filter((entry) => entry.id !== entryId);
@@ -502,19 +633,19 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
       let nextLayout = state.layoutItems;
       if (!hasLayout) {
         const photoLayoutCount = state.layoutItems.filter((item) => item.itemType === "photo").length;
-        const col = photoLayoutCount % 6;
-        const row = Math.floor(photoLayoutCount / 6);
+        const col = photoLayoutCount % BOARD_COLUMNS;
+        const row = Math.floor(photoLayoutCount / BOARD_COLUMNS);
 
         nextLayout = [
           ...state.layoutItems,
           {
             itemType: "photo",
             refId: entryId,
-            x: 70 + col * 180,
-            y: 140 + row * 260,
-            rotation: ((photoLayoutCount % 8) - 4) * 0.9,
+            x: BOARD_PADDING_X + col * PHOTO_GRID_X_STEP,
+            y: BOARD_PADDING_TOP + row * PHOTO_GRID_Y_STEP,
+            rotation: randomTilt(entryId),
             scale: 1,
-            zIndex: 20 + photoLayoutCount,
+            zIndex: 40 + photoLayoutCount,
             pinned: true,
           },
         ];
@@ -534,11 +665,82 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
       setDescription("");
       setPendingPhotos([]);
       setSelectedStickerIds([]);
+      setBoothFrameColor(BOOTH_FRAME_PRESETS[0]);
     } catch (saveError) {
       const text = saveError instanceof Error ? saveError.message : "Ошибка сохранения";
       setError(text);
     } finally {
       setSavingEntry(false);
+    }
+  }
+
+  function deleteDayEntry(entryId: string) {
+    if (!state) return;
+
+    const now = new Date().toISOString();
+    const nextEntries = state.entries.filter((entry) => entry.id !== entryId);
+    const nextLayout = state.layoutItems.filter((item) => !(item.itemType === "photo" && item.refId === entryId));
+
+    persistState({
+      ...state,
+      board: {
+        ...state.board,
+        updated_at: now,
+      },
+      entries: nextEntries,
+      layoutItems: nextLayout,
+    });
+
+    if (modalEntry?.id === entryId) {
+      setModalEntry(null);
+      setModalPhotoIndex(0);
+    }
+  }
+
+  function deletePhotoFromEntry(entryId: string, photoId: string) {
+    if (!state) return;
+
+    const entry = state.entries.find((item) => item.id === entryId);
+    if (!entry) return;
+
+    const filteredPhotos = entry.photos.filter((photo) => photo.id !== photoId);
+    if (!filteredPhotos.length) {
+      deleteDayEntry(entryId);
+      return;
+    }
+
+    const fixedPhotos = filteredPhotos.map((photo, index) => ({
+      ...photo,
+      sort_order: index,
+      is_featured: index === 0,
+    }));
+
+    const now = new Date().toISOString();
+    const nextEntries = state.entries
+      .map((item) =>
+        item.id === entryId
+          ? {
+              ...item,
+              photos: fixedPhotos,
+              updated_at: now,
+            }
+          : item,
+      )
+      .sort((a, b) => (a.date > b.date ? 1 : -1));
+
+    persistState({
+      ...state,
+      board: {
+        ...state.board,
+        updated_at: now,
+      },
+      entries: nextEntries,
+    });
+
+    if (modalEntry?.id === entryId) {
+      const nextModalEntry = nextEntries.find((item) => item.id === entryId) ?? null;
+      setModalEntry(nextModalEntry);
+      setModalPhotoIndex((prev) => Math.min(prev, fixedPhotos.length - 1));
     }
   }
 
@@ -625,10 +827,10 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
         audio_url: audioUrl,
         duration_sec: null,
         cover_path: null,
-        x: 120,
-        y: 980,
+        x: 160,
+        y: boardDimensions.height - 220,
         rotation: randomTilt(cassetteTitle),
-        z_index: 220 + state.cassettes.length,
+        z_index: 320 + state.cassettes.length,
         created_at: now,
       };
 
@@ -662,21 +864,18 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     }
   }
 
-  async function saveLayout(nextItems: LayoutItem[]) {
+  function saveLayout(nextItems: LayoutItem[]) {
     if (!state) return;
 
     setSavingLayout(true);
+    persistState({
+      ...state,
+      layoutItems: nextItems,
+    });
 
-    try {
-      persistState({
-        ...state,
-        layoutItems: nextItems,
-      });
-    } catch {
-      setError("Ошибка сохранения раскладки");
-    } finally {
+    window.setTimeout(() => {
       setSavingLayout(false);
-    }
+    }, 240);
   }
 
   function upsertLocalLayout(nextItem: LayoutItem) {
@@ -685,9 +884,33 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
         (item) => !(item.itemType === nextItem.itemType && item.refId === nextItem.refId),
       );
       const next = [...without, nextItem];
-      void saveLayout(next);
+      saveLayout(next);
       return next;
     });
+  }
+
+  function autoArrangePhotoCards() {
+    if (!state) return;
+
+    const preserved = layoutItems.filter((item) => item.itemType !== "photo");
+    const photoLayouts = cards.map((card, index) => {
+      const row = Math.floor(index / BOARD_COLUMNS);
+      const col = index % BOARD_COLUMNS;
+      const previous = layoutByKey.get(`photo:${card.entry.id}`);
+
+      return {
+        itemType: "photo" as const,
+        refId: card.entry.id,
+        x: BOARD_PADDING_X + col * PHOTO_GRID_X_STEP,
+        y: BOARD_PADDING_TOP + row * PHOTO_GRID_Y_STEP,
+        rotation: previous?.rotation ?? randomTilt(card.entry.id),
+        scale: 1,
+        zIndex: 40 + index,
+        pinned: true,
+      };
+    });
+
+    saveLayout([...preserved, ...photoLayouts]);
   }
 
   function onDragEnd(event: DragEndEvent) {
@@ -698,12 +921,26 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     const prev = layoutByKey.get(rawId);
     if (!prev) return;
 
+    const maxXByType =
+      itemType === "cassette"
+        ? boardDimensions.width - 300
+        : itemType === "sticker"
+          ? boardDimensions.width - 130
+          : boardDimensions.width - 220;
+
+    const maxYByType =
+      itemType === "cassette"
+        ? boardDimensions.height - 130
+        : itemType === "sticker"
+          ? boardDimensions.height - 130
+          : boardDimensions.height - 290;
+
     const updated: LayoutItem = {
       ...prev,
       itemType,
       refId,
-      x: Math.max(0, Math.round(prev.x + event.delta.x)),
-      y: Math.max(0, Math.round(prev.y + event.delta.y)),
+      x: clamp(Math.round(prev.x + event.delta.x), 0, maxXByType),
+      y: clamp(Math.round(prev.y + event.delta.y), 0, maxYByType),
     };
 
     upsertLocalLayout(updated);
@@ -718,7 +955,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     try {
       const pngDataUrl = await toPng(boardRef.current, {
         cacheBust: true,
-        backgroundColor: "#0b2a23",
+        backgroundColor: "#24180f",
         pixelRatio: 2,
       });
 
@@ -770,7 +1007,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
 
   if (loading || !state) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#071c18] text-emerald-100">
+      <main className="flex min-h-screen items-center justify-center bg-[#130b07] text-amber-100">
         Загрузка доски воспоминаний...
       </main>
     );
@@ -779,13 +1016,13 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
   const selectedPhoto = modalEntry ? modalEntry.photos[modalPhotoIndex] : null;
 
   return (
-    <main className="min-h-screen bg-[#031611] text-emerald-50">
-      <div className="mx-auto grid max-w-[1800px] gap-4 px-4 pb-10 pt-6 lg:grid-cols-[360px_1fr]">
-        <aside className="rounded-2xl border border-emerald-700/30 bg-[#05221b]/85 p-4 backdrop-blur">
+    <main className="min-h-screen bg-[#0f0806] text-amber-50">
+      <div className="mx-auto grid max-w-[2100px] gap-4 px-4 pb-10 pt-6 xl:grid-cols-[380px_1fr]">
+        <aside className="rounded-2xl border border-emerald-700/25 bg-[#10231f]/90 p-4 backdrop-blur">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-emerald-300/60">Личный кабинет</p>
-              <p className="text-sm text-emerald-100/90">{userEmail}</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-emerald-300/65">Личный кабинет</p>
+              <p className="text-sm text-emerald-100/95">{userEmail}</p>
               <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-emerald-300/55">Локальный режим</p>
             </div>
             <button
@@ -796,6 +1033,10 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
               Выйти
             </button>
           </div>
+
+          <p className="mb-4 rounded-xl border border-emerald-500/20 bg-black/30 p-3 text-xs text-emerald-100/85">
+            Сейчас данные хранятся только локально. Для синхронизации ноутбук + телефон нужен облачный режим (Supabase).
+          </p>
 
           <div className="mb-4 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
             <label className="text-xs uppercase tracking-[0.2em] text-emerald-300/70">Год доски</label>
@@ -835,11 +1076,45 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
               <input type="file" accept="image/*" multiple onChange={handlePhotoInput} className="mt-2 block w-full text-xs" />
             </label>
 
+            <div className="rounded-lg border border-emerald-600/30 bg-black/25 p-2">
+              <p className="text-xs uppercase tracking-[0.16em] text-emerald-300/70">Рамка фотобудки</p>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="color"
+                  value={boothFrameColor}
+                  onChange={(event) => setBoothFrameColor(event.target.value)}
+                  className="h-8 w-10 rounded border border-emerald-700/50 bg-[#041914]"
+                />
+                <div className="flex flex-wrap gap-1">
+                  {BOOTH_FRAME_PRESETS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setBoothFrameColor(color)}
+                      className={`h-6 w-6 rounded border ${boothFrameColor === color ? "border-emerald-200" : "border-emerald-700/40"}`}
+                      style={{ backgroundColor: color }}
+                      aria-label={`Цвет рамки ${color}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {pendingPhotos.length ? (
-              <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+              <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
                 {pendingPhotos.map((photo, index) => (
                   <div key={`${photo.storagePath}-${index}`} className="rounded-lg border border-emerald-700/40 bg-black/25 p-2">
-                    <img src={photo.url} alt="preview" className="mb-2 h-20 w-full rounded-md object-cover" />
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <img src={photo.url} alt="preview" className="h-20 w-full rounded-md object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removePendingPhoto(index)}
+                        className="rounded border border-rose-300/40 bg-rose-900/35 px-2 py-1 text-xs text-rose-100 hover:bg-rose-900/55"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-2">
                       <label className="text-xs text-emerald-100/80">
                         Дата кадра
@@ -863,7 +1138,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                       </label>
 
                       <label className="text-xs text-emerald-100/80">
-                        Фотобудка
+                        Группа фотобудки
                         <input
                           type="text"
                           value={photo.boothGroup}
@@ -1034,7 +1309,15 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
             </form>
           </section>
 
-          <section className="mt-4 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
+          <section className="mt-4 space-y-2 rounded-xl border border-emerald-700/30 bg-black/20 p-3">
+            <button
+              type="button"
+              onClick={autoArrangePhotoCards}
+              className="w-full rounded-lg border border-emerald-400/60 px-3 py-2 text-sm font-medium hover:bg-emerald-500/20"
+            >
+              Плавно выровнять фото
+            </button>
+
             <button
               type="button"
               onClick={triggerExport}
@@ -1049,137 +1332,202 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
           {savingLayout ? <p className="mt-2 text-xs text-emerald-200/70">Сохраняю раскладку...</p> : null}
         </aside>
 
-        <section className="min-h-[80vh] rounded-2xl border border-emerald-700/30 bg-[#0d2b24] p-4">
-          <div
-            ref={boardRef}
-            className="relative min-h-[1200px] overflow-hidden rounded-xl border border-emerald-700/20"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 20% 0%, rgba(110,231,183,0.17), transparent 42%), repeating-linear-gradient(45deg, rgba(16,75,61,0.45) 0 8px, rgba(10,57,46,0.42) 8px 16px)",
-              backgroundColor: "#1f4b3f",
-            }}
-          >
-            <div className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay">
-              <div className="h-full w-full" style={{ backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"120\"><filter id=\"n\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.95\" numOctaves=\"3\"/></filter><rect width=\"120\" height=\"120\" filter=\"url(%23n)\" opacity=\"0.4\"/></svg>')" }} />
-            </div>
+        <section className="min-h-[80vh] rounded-2xl border border-emerald-700/30 bg-[#071814] p-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+            <p className="text-xs uppercase tracking-[0.2em] text-amber-200/70">Пробковая стена · большой формат · ~300 фото</p>
+            <p className="text-xs text-emerald-100/70">Скролль доску в стороны и вниз</p>
+          </div>
 
-            <div className="pointer-events-none absolute left-0 right-0 top-1 z-10 flex items-start justify-around px-4">
-              {Array.from({ length: 18 }).map((_, index) => (
-                <div key={`lamp-${index}`} className="relative h-9 w-3">
-                  <div className="absolute left-1/2 top-0 h-3 w-[2px] -translate-x-1/2 bg-emerald-900" />
+          <div className="overflow-auto rounded-2xl border border-emerald-700/25 bg-[#050e0b] p-4">
+            <div ref={boardRef} className="relative rounded-[30px] bg-[#7f5a3b] p-6 shadow-[0_28px_70px_rgba(0,0,0,0.45)]" style={{ width: `${boardDimensions.width}px` }}>
+              <div className="pointer-events-none absolute inset-1 rounded-[28px] border-[18px] border-[#9a6f4a] shadow-[inset_0_0_0_2px_rgba(58,34,19,0.45)]" />
+
+              <div
+                className="relative overflow-hidden rounded-[16px] border border-[#d7b796]/30"
+                style={{
+                  minHeight: `${boardDimensions.height}px`,
+                  backgroundColor: "#9b6d43",
+                  backgroundImage:
+                    "radial-gradient(circle at 12% 18%, rgba(255,226,182,0.26) 0 1.7px, transparent 2.6px), radial-gradient(circle at 74% 40%, rgba(65,38,17,0.28) 0 1.6px, transparent 2.5px), radial-gradient(circle at 35% 76%, rgba(53,30,14,0.24) 0 1.8px, transparent 2.7px), repeating-linear-gradient(16deg, rgba(139,96,58,0.35) 0 10px, rgba(125,84,50,0.26) 10px 21px), linear-gradient(130deg, #b88254, #8b5e3a)",
+                }}
+              >
+                <div className="pointer-events-none absolute inset-0 opacity-25 mix-blend-multiply">
                   <div
-                    className="absolute left-1/2 top-2 h-4 w-3 -translate-x-1/2 rounded-full"
+                    className="h-full w-full"
                     style={{
-                      background: "radial-gradient(circle at 50% 35%, #ecfeff, #34d399)",
-                      boxShadow: "0 0 10px rgba(16,185,129,0.62)",
-                      animation: `pulse ${2 + (index % 3) * 0.5}s ease-in-out infinite`,
+                      backgroundImage:
+                        "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"140\" height=\"140\"><filter id=\"n\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"/></filter><rect width=\"140\" height=\"140\" filter=\"url(%23n)\" opacity=\"0.55\"/></svg>')",
                     }}
                   />
                 </div>
-              ))}
-            </div>
 
-            <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-              {cards.map((card, index) => {
-                const layout = layoutByKey.get(`photo:${card.entry.id}`);
-                if (!layout) return null;
-
-                return (
-                  <DraggableCard
-                    key={card.id}
-                    dragId={`photo:${card.entry.id}`}
-                    x={layout.x}
-                    y={layout.y}
-                    rotation={layout.rotation}
-                    zIndex={layout.zIndex || 20 + index}
+                {GARLAND_LINES.map((line, lineIndex) => (
+                  <div
+                    key={`garland-${lineIndex}`}
+                    className="pointer-events-none absolute left-14 right-14 z-10 h-[2px] origin-left rounded-full bg-[#efe7d8]/70"
+                    style={{ transform: `rotate(${line.tilt}deg)`, top: `${line.top}px` }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModalEntry(card.entry);
-                        setModalPhotoIndex(0);
-                      }}
-                      className="relative block w-[150px] rounded-sm bg-white p-2 pb-7 text-left shadow-[0_14px_25px_rgba(0,0,0,0.35)]"
-                    >
-                      <div className="absolute -top-3 left-1/2 z-10 h-6 w-5 -translate-x-1/2 rounded-t bg-emerald-700 shadow">
-                        <div className="absolute left-1/2 top-1 h-2 w-2 -translate-x-1/2 rounded-full bg-emerald-500" />
-                      </div>
-
-                      {card.photos.length > 1 ? (
-                        <div className="grid gap-1">
-                          {card.photos.slice(0, 4).map((photo) => (
-                            <img
-                              key={photo.id}
-                              src={photo.url}
-                              alt={card.entry.main_event || "День"}
-                              className="h-20 w-full rounded-[2px] object-cover"
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <img
-                          src={card.cover.url}
-                          alt={card.entry.main_event || "Фото дня"}
-                          className="h-36 w-full rounded-[2px] object-cover"
+                    {Array.from({ length: line.bulbs }).map((_, bulbIndex) => {
+                      const leftPercent = (bulbIndex / (line.bulbs - 1)) * 100;
+                      return (
+                        <span
+                          key={`bulb-${lineIndex}-${bulbIndex}`}
+                          className="absolute top-1/2 h-3 w-2 -translate-y-1/2 rounded-full"
+                          style={{
+                            left: `calc(${leftPercent}% - 4px)`,
+                            background: "radial-gradient(circle at 50% 35%, #fffbeb, #fde68a 58%, #f59e0b)",
+                            boxShadow: "0 0 9px rgba(255,251,191,0.85), 0 0 18px rgba(253,224,71,0.45)",
+                            animation: `twinkle ${1.7 + (bulbIndex % 4) * 0.33}s ease-in-out infinite`,
+                            animationDelay: `${(bulbIndex % 7) * 0.18}s`,
+                          }}
                         />
-                      )}
+                      );
+                    })}
+                  </div>
+                ))}
 
-                      <p className="font-handwriting absolute bottom-1 left-0 right-0 text-center text-sm text-zinc-700">
-                        {format(new Date(card.entry.date), "d MMM yyyy", { locale: ru })}
-                      </p>
-                    </button>
-                  </DraggableCard>
-                );
-              })}
+                <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+                  {cards.map((card, index) => {
+                    const layout = layoutByKey.get(`photo:${card.entry.id}`);
+                    if (!layout) return null;
 
-              {layoutItems
-                .filter((item) => item.itemType === "sticker")
-                .map((item) => {
-                  const sticker = stickersById.get(item.refId);
-                  if (!sticker) return null;
+                    const isPhotobooth = card.photos.length > 1;
+                    const frameColor = card.entry.booth_frame_color || "#fffdf8";
 
-                  return (
-                    <DraggableCard
-                      key={`sticker-${item.refId}`}
-                      dragId={`sticker:${item.refId}`}
-                      x={item.x}
-                      y={item.y}
-                      rotation={item.rotation}
-                      zIndex={item.zIndex}
-                    >
-                      <div
-                        className="grid h-20 w-20 place-items-center rounded-xl border border-emerald-200/20 text-4xl shadow-[0_9px_16px_rgba(0,0,0,0.35)]"
-                        style={{ backgroundColor: `${sticker.color}88` }}
-                        title={sticker.name}
+                    return (
+                      <DraggableCard
+                        key={card.id}
+                        dragId={`photo:${card.entry.id}`}
+                        x={layout.x}
+                        y={layout.y}
+                        rotation={layout.rotation}
+                        zIndex={layout.zIndex || 40 + index}
                       >
-                        {sticker.emoji || "✨"}
-                      </div>
-                    </DraggableCard>
-                  );
-                })}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
+                            setModalEntry(card.entry);
+                            setModalPhotoIndex(0);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              setModalEntry(card.entry);
+                              setModalPhotoIndex(0);
+                            }
+                          }}
+                          className="relative block w-[178px] text-left"
+                        >
+                          <div className="absolute -top-4 left-1/2 z-20 h-9 w-4 -translate-x-1/2 rounded-[3px] border border-[#89643f] bg-[#d7b386] shadow-[0_3px_8px_rgba(0,0,0,0.35)]">
+                            <div className="absolute inset-x-0 top-3 h-[1px] bg-[#916b45]" />
+                          </div>
 
-              {state.cassettes.map((cassette) => {
-                const layout = layoutByKey.get(`cassette:${cassette.id}`);
-                if (!layout) return null;
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              deleteDayEntry(card.entry.id);
+                            }}
+                            className="absolute -right-2 -top-2 z-30 rounded-full border border-rose-200/60 bg-rose-900/75 px-1.5 py-0.5 text-[10px] text-rose-100 hover:bg-rose-800"
+                          >
+                            ✕
+                          </button>
 
-                return (
-                  <DraggableCard
-                    key={cassette.id}
-                    dragId={`cassette:${cassette.id}`}
-                    x={layout.x}
-                    y={layout.y}
-                    rotation={layout.rotation}
-                    zIndex={layout.zIndex}
-                  >
-                    <div className="w-56 rounded-xl border border-emerald-500/30 bg-[#052119]/90 p-3 shadow-2xl">
-                      <p className="mb-2 text-xs uppercase tracking-[0.25em] text-emerald-200/70">Cassette</p>
-                      <p className="mb-2 text-sm font-semibold text-emerald-100">{cassette.title}</p>
-                      <audio controls src={cassette.audio_url} className="h-8 w-full" preload="metadata" />
-                    </div>
-                  </DraggableCard>
-                );
-              })}
-            </DndContext>
+                          {isPhotobooth ? (
+                            <div
+                              className="relative rounded-sm p-2 pb-8 shadow-[0_16px_26px_rgba(0,0,0,0.34)]"
+                              style={{ backgroundColor: frameColor }}
+                            >
+                              <div className="space-y-1.5">
+                                {card.photos.slice(0, 4).map((photo) => (
+                                  <img
+                                    key={photo.id}
+                                    src={photo.url}
+                                    alt={card.entry.main_event || "Фотобудка"}
+                                    className="h-20 w-full rounded-[2px] object-cover"
+                                  />
+                                ))}
+                              </div>
+
+                              {card.photos.length > 4 ? (
+                                <span className="absolute right-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                                  +{card.photos.length - 4}
+                                </span>
+                              ) : null}
+
+                              <p className="font-handwriting absolute bottom-1 left-0 right-0 text-center text-sm text-zinc-700">
+                                {format(new Date(card.entry.date), "d MMM yyyy", { locale: ru })}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="relative rounded-sm bg-white p-2 pb-8 shadow-[0_16px_26px_rgba(0,0,0,0.34)]">
+                              <img
+                                src={card.cover.url}
+                                alt={card.entry.main_event || "Фото дня"}
+                                className="h-40 w-full rounded-[2px] object-cover"
+                              />
+                              <p className="font-handwriting absolute bottom-1 left-0 right-0 text-center text-sm text-zinc-700">
+                                {format(new Date(card.entry.date), "d MMM yyyy", { locale: ru })}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </DraggableCard>
+                    );
+                  })}
+
+                  {layoutItems
+                    .filter((item) => item.itemType === "sticker")
+                    .map((item) => {
+                      const sticker = stickersById.get(item.refId);
+                      if (!sticker) return null;
+
+                      return (
+                        <DraggableCard
+                          key={`sticker-${item.refId}`}
+                          dragId={`sticker:${item.refId}`}
+                          x={item.x}
+                          y={item.y}
+                          rotation={item.rotation}
+                          zIndex={item.zIndex}
+                        >
+                          <div
+                            className="grid h-20 w-20 place-items-center rounded-xl border border-emerald-200/20 text-4xl shadow-[0_9px_16px_rgba(0,0,0,0.35)]"
+                            style={{ backgroundColor: `${sticker.color}99` }}
+                            title={sticker.name}
+                          >
+                            {sticker.emoji || "✨"}
+                          </div>
+                        </DraggableCard>
+                      );
+                    })}
+
+                  {state.cassettes.map((cassette) => {
+                    const layout = layoutByKey.get(`cassette:${cassette.id}`);
+                    if (!layout) return null;
+
+                    return (
+                      <DraggableCard
+                        key={cassette.id}
+                        dragId={`cassette:${cassette.id}`}
+                        x={layout.x}
+                        y={layout.y}
+                        rotation={layout.rotation}
+                        zIndex={layout.zIndex}
+                      >
+                        <div className="w-60 rounded-xl border border-emerald-500/30 bg-[#052119]/90 p-3 shadow-2xl">
+                          <p className="mb-2 text-xs uppercase tracking-[0.25em] text-emerald-200/70">Cassette</p>
+                          <p className="mb-2 text-sm font-semibold text-emerald-100">{cassette.title}</p>
+                          <audio controls src={cassette.audio_url} className="h-8 w-full" preload="metadata" />
+                        </div>
+                      </DraggableCard>
+                    );
+                  })}
+                </DndContext>
+              </div>
+            </div>
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -1191,11 +1539,11 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
                   upsertLocalLayout({
                     itemType: "sticker",
                     refId: sticker.id,
-                    x: 60 + Math.round(Math.random() * 500),
-                    y: 760 + Math.round(Math.random() * 240),
+                    x: 80 + Math.round(Math.random() * (boardDimensions.width - 440)),
+                    y: Math.round(530 + Math.random() * Math.max(240, boardDimensions.height - 860)),
                     rotation: randomTilt(sticker.id),
                     scale: 1,
-                    zIndex: 250,
+                    zIndex: 360,
                     pinned: true,
                   })
                 }
@@ -1232,6 +1580,23 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
 
             <img src={selectedPhoto.url} alt="День" className="mb-3 max-h-[60vh] w-full rounded-xl object-contain" />
 
+            <div className="mb-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => deletePhotoFromEntry(modalEntry.id, selectedPhoto.id)}
+                className="rounded-md border border-rose-300/45 bg-rose-900/35 px-3 py-1 text-xs text-rose-100 hover:bg-rose-900/50"
+              >
+                {modalEntry.photos.length === 1 ? "Удалить день" : "Удалить этот кадр"}
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteDayEntry(modalEntry.id)}
+                className="rounded-md border border-rose-300/45 px-3 py-1 text-xs text-rose-100 hover:bg-rose-900/35"
+              >
+                Удалить весь день
+              </button>
+            </div>
+
             <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
@@ -1261,15 +1626,15 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
       ) : null}
 
       <style jsx global>{`
-        @keyframes pulse {
+        @keyframes twinkle {
           0%,
           100% {
-            opacity: 0.6;
-            transform: translateX(-50%) scale(0.92);
+            opacity: 0.72;
+            transform: translateY(-50%) scale(0.88);
           }
           50% {
             opacity: 1;
-            transform: translateX(-50%) scale(1.08);
+            transform: translateY(-50%) scale(1.12);
           }
         }
       `}</style>

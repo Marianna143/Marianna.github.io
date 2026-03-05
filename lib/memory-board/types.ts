@@ -53,6 +53,7 @@ export type MemoryDayEntry = {
   date: string;
   main_event: string | null;
   description: string | null;
+  booth_frame_color?: string | null;
   created_at: string;
   updated_at: string;
   photos: MemoryEntryPhoto[];
