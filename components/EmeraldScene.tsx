@@ -285,7 +285,7 @@ export default function EmeraldScene() {
 
     return (
         <div
-            className="fixed inset-0 z-[-1] pointer-events-none bg-black relative overflow-hidden"
+            className="fixed inset-0 w-screen h-screen z-[-1] pointer-events-none bg-black overflow-hidden"
             style={{ opacity: 0.84 }}
             aria-hidden="true"
         >
@@ -293,6 +293,7 @@ export default function EmeraldScene() {
                 camera={{ position: [0, 0, 6], fov: 68 }}
                 dpr={[1, 1.25]}
                 gl={{ antialias: false, alpha: true }}
+                style={{ width: "100vw", height: "100vh" }}
                 eventSource={typeof document !== "undefined" ? document.body : undefined}
                 eventPrefix="client"
             >
