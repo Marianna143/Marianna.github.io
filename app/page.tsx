@@ -4,7 +4,6 @@ import SalesProofSection from "@/components/SalesProofSection";
 import PricingSection from "@/components/PricingSection";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
-import OrganicReachSection from "@/components/OrganicReachSection";
 import FaqSection, { getFaqItems } from "@/components/FaqSection";
 
 export default function Home() {
@@ -92,7 +91,6 @@ export default function Home() {
             <HeroSection />
             <PortfolioGrid />
             <SalesProofSection />
-            <OrganicReachSection />
             <PricingSection />
             <FaqSection />
             <ContactForm />
