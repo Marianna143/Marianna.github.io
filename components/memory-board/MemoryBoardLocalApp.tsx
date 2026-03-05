@@ -547,7 +547,7 @@ export default function MemoryBoardLocalApp({ userId, userEmail }: { userId: str
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key == "Escape") {
+      if (event.key === "Escape") {
         setIsBoardOverviewOpen(false);
       }
     };
