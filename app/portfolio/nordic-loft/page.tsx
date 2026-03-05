@@ -1,118 +1,52 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowLeft, House, Ruler, LampFloor, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Sofa, Home, LampFloor, Ruler } from "lucide-react";
+import NordicNav from "./components/NordicNav";
 
-const points = [
-    {
-        title: "Живые материалы",
-        text: "Дерево, лен, камень и светлые поверхности делают интерфейс спокойным и премиальным.",
-        icon: House,
-    },
-    {
-        title: "Четкая сетка",
-        text: "Блоки выстроены так, чтобы взгляд быстро проходил путь от идеи до кнопки связи.",
-        icon: Ruler,
-    },
-    {
-        title: "Атмосферная подача",
-        text: "Мягкие переходы и аккуратная анимация создают эффект дорогого интерьерного журнала.",
-        icon: LampFloor,
-    },
+const cards = [
+  { title: "Живой интерьер", text: "Визуализация, которая передает атмосферу и помогает клиенту представить будущий дом.", icon: Home },
+  { title: "Сценарий пространства", text: "Подача не только про красоту, но и про удобство каждого шага в быту.", icon: Sofa },
+  { title: "Свет и материалы", text: "Комбинация оттенков, фактур и света формирует ощущение дорогого спокойствия.", icon: LampFloor },
+  { title: "Архитектура блоков", text: "Каждый раздел отвечает на вопрос клиента и ведет к заявке на консультацию.", icon: Ruler },
 ];
 
 export default function NordicLoftPage() {
-    return (
-        <main className="min-h-screen bg-[#F5F2EB] text-[#2D2722] selection:bg-[#BFAE92] selection:text-[#1d1915]">
-            <nav className="sticky top-0 z-40 border-b border-[#BFAE92]/35 backdrop-blur-xl bg-[#F5F2EB]/75">
-                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <Link href="/" className="inline-flex items-center gap-2 text-sm text-[#2D2722]/70 hover:text-[#2D2722] transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
-                        Назад в портфолио
-                    </Link>
-                    <span className="text-xs tracking-[0.24em] uppercase text-[#6B5D4A]">Северный Лофт</span>
-                </div>
-            </nav>
+  return (
+    <main className="min-h-screen bg-[#f5f1e8] text-[#2e2823] selection:bg-[#cab99b] selection:text-[#1f1b17]">
+      <NordicNav />
 
-            <section className="max-w-6xl mx-auto px-6 pt-20 pb-14">
-                <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65 }}>
-                    <p className="text-xs tracking-[0.24em] uppercase text-[#7c6c56] mb-5">Концепт сайта студии интерьеров</p>
-                    <h1 className="text-5xl md:text-7xl leading-[1.05]">
-                        Пространства,
-                        <span className="block italic text-[#6B5D4A]">в которые хочется возвращаться</span>
-                    </h1>
-                    <p className="mt-8 text-[#2D2722]/68 max-w-2xl leading-relaxed">
-                        Концепт показывает, как можно продавать дизайн интерьера через атмосферу, ясную структуру и убедительные примеры работ.
-                    </p>
-                </motion.div>
-            </section>
+      <section className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+        <p className="text-xs tracking-[0.24em] uppercase text-[#7d6d56] mb-6">Северный Лофт · Концепт многостраничного сайта</p>
+        <h1 className="text-5xl md:text-7xl leading-[1.03]">
+          Интерьерный сайт,
+          <span className="block italic text-[#6d5e4a]">который продает стиль жизни</span>
+        </h1>
+        <p className="mt-8 text-[#2e2823]/66 max-w-3xl leading-relaxed">
+          В этом концепте собрана структура студийного сайта с несколькими страницами: проекты, этапы работы и контакт. Подача деликатная,
+          дорогая и ориентированная на доверие.
+        </p>
+        <div className="mt-9 flex flex-wrap gap-3">
+          <Link href="/portfolio/nordic-loft/proekty" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#2e2823] text-[#f5f1e8] hover:bg-[#463d34] transition-colors">
+            Смотреть проекты
+            <ArrowUpRight className="w-4 h-4" />
+          </Link>
+          <Link href="/portfolio/nordic-loft/etapy" className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-[#b9a98f]/60 text-[#2e2823] hover:bg-[#ebe3d4] transition-colors">
+            Этапы реализации
+          </Link>
+        </div>
+      </section>
 
-            <section className="max-w-6xl mx-auto px-6 pb-16">
-                <div className="grid md:grid-cols-[1.2fr_0.8fr] gap-5">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="rounded-[2rem] bg-gradient-to-br from-[#EDE5D7] to-[#D9CDB8] min-h-[360px] p-8 flex flex-col justify-end"
-                    >
-                        <p className="text-xs tracking-[0.2em] uppercase text-[#6B5D4A]">Фокус на эмоцию</p>
-                        <h2 className="text-4xl mt-3 leading-tight">Теплый минимализм и аккуратная типографика</h2>
-                    </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.12 }}
-                        className="rounded-[2rem] border border-[#BFAE92]/45 bg-[#F8F4EC] min-h-[360px] p-8"
-                    >
-                        <div className="space-y-3 mt-12">
-                            <div className="h-2 rounded-full bg-[#8E7A61]/45 w-[72%]" />
-                            <div className="h-2 rounded-full bg-[#8E7A61]/28 w-[54%]" />
-                            <div className="h-28 rounded-2xl border border-[#BFAE92]/60 bg-[#ECE5D8]" />
-                        </div>
-                    </motion.div>
-                </div>
-            </section>
-
-            <section className="max-w-6xl mx-auto px-6 pb-20">
-                <div className="grid md:grid-cols-3 gap-4">
-                    {points.map((point, index) => {
-                        const Icon = point.icon;
-                        return (
-                            <motion.article
-                                key={point.title}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.08, duration: 0.4 }}
-                                className="rounded-2xl border border-[#BFAE92]/45 bg-[#F8F4EC]/90 p-6"
-                            >
-                                <Icon className="w-7 h-7 text-[#6B5D4A] mb-4" />
-                                <h3 className="text-2xl mb-3">{point.title}</h3>
-                                <p className="text-sm text-[#2D2722]/65 leading-relaxed">{point.text}</p>
-                            </motion.article>
-                        );
-                    })}
-                </div>
-            </section>
-
-            <section className="max-w-6xl mx-auto px-6 pb-24">
-                <div className="rounded-3xl bg-[#2D2722] text-[#F8F4EC] p-8 md:p-12">
-                    <p className="text-xs tracking-[0.23em] uppercase text-[#d6c8b0] mb-4">Итог концепта</p>
-                    <h2 className="text-4xl md:text-5xl leading-[1.08]">
-                        Сайт передает вкус студии
-                        <span className="block italic text-[#d6c8b0]">и уверенно ведет к брифу</span>
-                    </h2>
-                    <Link
-                        href="/#projects"
-                        className="inline-flex items-center gap-2 mt-8 px-6 py-3 rounded-full border border-[#d6c8b0]/45 text-[#F8F4EC] hover:bg-[#d6c8b0] hover:text-[#2D2722] transition-colors"
-                    >
-                        Вернуться к кейсам
-                        <ArrowUpRight className="w-4 h-4" />
-                    </Link>
-                </div>
-            </section>
-        </main>
-    );
+      <section className="max-w-6xl mx-auto px-6 pb-24 grid md:grid-cols-2 gap-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <article key={card.title} className="rounded-2xl border border-[#cabba0]/58 bg-[#f9f5ee] p-6">
+              <Icon className="w-6 h-6 text-[#6d5e4a] mb-4" />
+              <h2 className="text-2xl mb-3">{card.title}</h2>
+              <p className="text-sm leading-relaxed text-[#2e2823]/68">{card.text}</p>
+            </article>
+          );
+        })}
+      </section>
+    </main>
+  );
 }
