@@ -379,24 +379,34 @@ export default function MemoryAuthPage() {
   const submitDisabled = loading || isConfigured === null;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#02130f] px-6 py-10 text-emerald-50">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.25),transparent_40%),radial-gradient(circle_at_80%_15%,rgba(20,184,166,0.2),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(6,95,70,0.45),transparent_60%)]" />
+    <main className="relative min-h-screen overflow-hidden bg-[#0b0908] px-4 py-8 text-[#f3ece1] sm:px-6 sm:py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_12%,rgba(194,154,92,0.18),transparent_36%),radial-gradient(circle_at_86%_18%,rgba(94,78,56,0.2),transparent_42%),radial-gradient(circle_at_50%_100%,rgba(20,17,14,0.94),rgba(11,9,8,0.98))]" />
+      <div className="pointer-events-none absolute inset-0 opacity-70 [background-image:linear-gradient(to_right,rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.012)_1px,transparent_1px)] [background-size:58px_58px]" />
 
-      <div className="relative mx-auto max-w-md rounded-3xl border border-emerald-400/30 bg-[#03261f]/80 p-7 shadow-[0_24px_80px_rgba(4,35,29,0.65)] backdrop-blur-md">
-        <p className="mb-2 text-sm uppercase tracking-[0.3em] text-emerald-200/70">Личный вход</p>
-        <h1 className="mb-6 text-3xl font-semibold text-emerald-50">Дневник Воспоминаний</h1>
+      <div className="relative mx-auto max-w-md rounded-[28px] border border-[#d2b07c]/35 bg-[#171410]/88 p-7 shadow-[0_28px_100px_rgba(0,0,0,0.62)] backdrop-blur-md sm:p-8">
+        <div className="mb-7 flex items-start justify-between gap-4">
+          <div>
+            <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-[#dbc69b]/75">Частная зона</p>
+            <h1 className="text-3xl text-[#f8f1e7]">Дневник Воспоминаний</h1>
+          </div>
+          <span className="rounded-full border border-[#d2b07c]/30 bg-[#2b2218]/70 px-3 py-1 text-[11px] text-[#e7d6ba]">
+            {mode === "sign-up" ? "Регистрация" : "Вход"}
+          </span>
+        </div>
 
         {isConfigured === false ? (
-          <div className="mb-4 rounded-xl border border-emerald-300/40 bg-emerald-900/30 p-3 text-sm text-emerald-100">
+          <div className="mb-5 rounded-xl border border-[#c9ad7b]/35 bg-[#251e16]/70 px-4 py-3 text-sm text-[#e6d7be]">
             Локальный режим: храним только ваш аккаунт ({MEMORY_OWNER_EMAIL}) и один тестовый профиль.
           </div>
         ) : null}
 
-        <div className="mb-6 flex gap-2 rounded-xl border border-emerald-500/40 bg-[#062f26] p-1">
+        <div className="mb-6 grid grid-cols-2 gap-1.5 rounded-xl border border-[#8a7453]/45 bg-[#211b14] p-1.5">
           <button
             type="button"
-            className={`w-full rounded-lg px-3 py-2 text-sm transition ${
-              mode === "sign-in" ? "bg-emerald-400 text-emerald-950" : "text-emerald-100/75 hover:bg-emerald-500/20"
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+              mode === "sign-in"
+                ? "bg-[#d3b07d] text-[#2a2118] shadow-[0_8px_20px_rgba(0,0,0,0.28)]"
+                : "text-[#e9dcc8]/72 hover:bg-[#30261b]"
             }`}
             onClick={() => setMode("sign-in")}
           >
@@ -404,8 +414,10 @@ export default function MemoryAuthPage() {
           </button>
           <button
             type="button"
-            className={`w-full rounded-lg px-3 py-2 text-sm transition ${
-              mode === "sign-up" ? "bg-emerald-400 text-emerald-950" : "text-emerald-100/75 hover:bg-emerald-500/20"
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+              mode === "sign-up"
+                ? "bg-[#d3b07d] text-[#2a2118] shadow-[0_8px_20px_rgba(0,0,0,0.28)]"
+                : "text-[#e9dcc8]/72 hover:bg-[#30261b]"
             }`}
             onClick={() => setMode("sign-up")}
           >
@@ -415,31 +427,31 @@ export default function MemoryAuthPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "sign-up" ? (
-            <label className="block text-sm text-emerald-100/90">
+            <label className="block text-sm text-[#decfb7]">
               Имя
               <input
                 type="text"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                className="mt-2 w-full rounded-xl border border-emerald-600/45 bg-[#041e18] px-3 py-2 text-emerald-50 outline-none focus:border-emerald-300"
+                className="mt-2 w-full rounded-xl border border-[#7f6a4e]/50 bg-[#110f0c] px-3 py-2.5 text-[#f4ead9] outline-none transition placeholder:text-[#8d7c66] focus:border-[#d4b483]"
                 placeholder="Как вас подписать"
               />
             </label>
           ) : null}
 
-          <label className="block text-sm text-emerald-100/90">
+          <label className="block text-sm text-[#decfb7]">
             Email
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-emerald-600/45 bg-[#041e18] px-3 py-2 text-emerald-50 outline-none focus:border-emerald-300"
+              className="mt-2 w-full rounded-xl border border-[#7f6a4e]/50 bg-[#110f0c] px-3 py-2.5 text-[#f4ead9] outline-none transition placeholder:text-[#8d7c66] focus:border-[#d4b483]"
               placeholder="you@example.com"
             />
           </label>
 
-          <label className="block text-sm text-emerald-100/90">
+          <label className="block text-sm text-[#decfb7]">
             Пароль
             <input
               type="password"
@@ -447,18 +459,24 @@ export default function MemoryAuthPage() {
               onChange={(event) => setPassword(event.target.value)}
               required
               minLength={6}
-              className="mt-2 w-full rounded-xl border border-emerald-600/45 bg-[#041e18] px-3 py-2 text-emerald-50 outline-none focus:border-emerald-300"
+              className="mt-2 w-full rounded-xl border border-[#7f6a4e]/50 bg-[#110f0c] px-3 py-2.5 text-[#f4ead9] outline-none transition placeholder:text-[#8d7c66] focus:border-[#d4b483]"
               placeholder="Минимум 6 символов"
             />
           </label>
 
+          {mode === "sign-up" ? (
+            <p className="rounded-lg border border-[#584734]/45 bg-[#1a1510]/80 px-3 py-2 text-xs text-[#d2bfa3]">
+              Аккаунт создается в приватной зоне дневника. Доступ сохранится только за разрешенными email.
+            </p>
+          ) : null}
+
           {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-          {message ? <p className="text-sm text-emerald-200">{message}</p> : null}
+          {message ? <p className="text-sm text-amber-100">{message}</p> : null}
 
           <button
             type="submit"
             disabled={submitDisabled}
-            className="w-full rounded-xl bg-emerald-400 px-4 py-2.5 font-medium text-emerald-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-gradient-to-r from-[#dec193] to-[#c7a272] px-4 py-2.5 font-medium text-[#2c241b] transition hover:from-[#e3c99f] hover:to-[#d2b082] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Подождите..." : mode === "sign-in" ? "Войти" : "Создать аккаунт"}
           </button>
